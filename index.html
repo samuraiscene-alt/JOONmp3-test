@@ -32,7 +32,7 @@ dialog h3,.player-top,#nowPlaying .art{touch-action:none;user-select:none;-webki
 #nowPlaying .art{-webkit-user-drag:none;cursor:grab}
 dialog[data-dragging="true"]{user-select:none;will-change:transform}
 @media(prefers-reduced-motion:reduce){dialog{transition:none!important}}
-.duplicate-toast{position:fixed;z-index:1000;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:18px 20px;border:1px solid #ffffff30;border-radius:18px;background:#303033f5;backdrop-filter:blur(20px);color:#fff;text-align:center;font-size:15px;line-height:1.6;box-shadow:0 12px 40px #0008;pointer-events:none}
+.duplicate-toast{position:fixed;z-index:1000;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:18px 20px;border:1px solid #ffffff30;border-radius:18px;background:#303033f5;backdrop-filter:blur(20px);color:#fff;text-align:center;font-size:15px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere;box-shadow:0 12px 40px #0008;pointer-events:none}
 .select-link{color:var(--accent);font-size:15px;padding:0 0 0 10px}.selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:6px 0 12px}.selection-tools button{color:var(--accent);font-size:14px}.selection-tools span{color:var(--muted);font-size:13px}.selection-check{width:28px;height:28px;min-height:28px;border:1.5px solid #717176;border-radius:50%;display:grid;place-items:center;color:white;flex-shrink:0;margin-right:7px;font-size:17px}.selection-check[aria-checked=true]{background:var(--accent);border-color:var(--accent)}.row.selected{background:#ff375f09}.bulk-bar{border-radius:22px;border:1px solid #ffffff24;background:#252527ed;backdrop-filter:blur(24px);padding:12px 15px}.bulk-bar p{text-align:center;font-size:13px;color:var(--muted);margin:0 0 8px}.bulk-actions{display:flex;gap:12px;justify-content:space-between}.bulk-actions button{display:flex;gap:8px;align-items:center;justify-content:center;flex:1;color:var(--accent)}.bulk-actions .danger{color:#ff6574}.confirm-sheet .danger{color:#ff6574}.confirm-sheet p{line-height:1.7;color:var(--muted);font-size:14px}
 </style>
 </head>
@@ -97,11 +97,12 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   };
   function say(message) { $('status').textContent = message; }
   let duplicateTimer = null;
-  function showDuplicate(message = '이미 같은 곡이 플레이어에 저장되어 있습니다') {
+  function showDuplicate(message = '이미 같은 곡이 플레이어에 저장되어 있습니다', names = []) {
     const toast = $('duplicateToast');
     const sheet = ['bulkMoveMenu','bulkDeleteMenu','convertMenu','songMenu','songPicker','playlistPicker','collectionMenu','addMenu','nowPlaying'].map($).find(v=>v.open);
     (sheet || document.body).prepend(toast);
-    toast.textContent = message;
+    const title = names.length ? names[0] + (names.length > 1 ? ' 외 ' + (names.length - 1) + '곡' : '') : '';
+    toast.textContent = (title ? title + '\n' : '') + message;
     toast.hidden = false;
     clearTimeout(duplicateTimer);
     duplicateTimer = setTimeout(() => { toast.hidden = true; },3000);
@@ -293,14 +294,14 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     if (!ready || importing || maintenance || converting) return;
     importing = true; $('filePicker').disabled = true; $('demo').disabled = true; $('addLabel').classList.add('disabled');
     const targetFolder = collection()?.kind !== 'playlist' && activeFolder !== 'all' ? activeFolder : 'library';
-    let added = 0, duplicates = 0, failed = 0;
+    let added = 0, duplicates = 0, failed = 0; const duplicateNames = [];
     try {
       for (let index = 0; index < files.length; index++) {
         const file = files[index]; say((index + 1) + ' / ' + files.length + '곡 저장 중…');
         if (!file.size || (!file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(file.name))) { failed++; continue; }
         const fingerprint = file.name + ':' + file.size + ':' + file.lastModified;
         let contentHash;
-        try { contentHash = await fileHash(file); if (await identicalTrack(file,contentHash)) { duplicates++; continue; } }
+        try { contentHash = await fileHash(file); const duplicate = await identicalTrack(file,contentHash); if (duplicate) { duplicates++; duplicateNames.push(duplicate.name); continue; } }
         catch { failed++; continue; }
         const t = { id: crypto.randomUUID(), name: file.name.replace(/\.[^.]+$/, ''), filename: file.name, size: file.size, folderId: targetFolder, fingerprint, contentHash, addedAt: Date.now(), duration: null };
         const mime = file.type || (/\.mp3$/i.test(file.name) ? 'audio/mpeg' : /\.m4a$/i.test(file.name) ? 'audio/mp4' : /\.wav$/i.test(file.name) ? 'audio/wav' : 'audio/aac');
@@ -312,7 +313,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       render();
       if (!currentId && tracks.length) { queue = visibleTracks().map(t => t.id); if (queue.length) await choose(queue[0], false, '음악 준비'); }
       say(added + '곡 저장 완료' + (duplicates ? ' · 중복 ' + duplicates + '곡 제외' : '') + (failed ? ' · ' + failed + '곡 저장 실패 — 공간과 파일을 확인해 주세요.' : '') + '. 곡을 눌러 재생하세요.');
-      if (duplicates) showDuplicate();
+      if (duplicates) showDuplicate(undefined,duplicateNames);
       if (added && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
     } finally { importing = false; $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled'); $('filePicker').value = ''; }
   }
@@ -332,11 +333,11 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     const t = track(selectedId); if (!t) return;
     const destination = $('moveFolder').value;
     if (!physicalFolders().some(f=>f.id===destination)) return;
-    if (t.folderId===destination) { showFolderDuplicate(destination); return; }
+    if (t.folderId===destination) { showFolderDuplicate(destination,[t.name]); return; }
     if (importing || converting) return;
     setMaintenance(true);
     try {
-      if (await duplicateInFolder(t,destination)) { showFolderDuplicate(destination); return; }
+      if (await duplicateInFolder(t,destination)) { showFolderDuplicate(destination,[t.name]); return; }
       const updated = {...t,folderId:destination};
       await write(['tracks'],tx=>tx.objectStore('tracks').put(updated));Object.assign(t,updated);$('songMenu').close();render();updateMedia();say(folderName(destination)+' 폴더로 이동했어요.');
     } catch {say('이동을 저장하지 못했어요.');}
@@ -508,7 +509,8 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     if (!videoFile || converting || importing || maintenance) return;
     const file = videoFile, folderId = $('convertFolder').value, bitrate = $('bitrate').value;
     const fingerprint = 'converted:' + file.name + ':' + file.size + ':' + file.lastModified + ':' + bitrate;
-    if (tracks.some(t=>t.fingerprint===fingerprint)) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(); return; }
+    const savedConversion = tracks.find(t=>t.fingerprint===fingerprint);
+    if (savedConversion) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(undefined,[savedConversion.name]); return; }
     if (!file.size) { conversionDisplay('error', '비어 있는 영상이에요.'); return; }
     if (file.size >= 2147483648) { conversionDisplay('error', '이 영상은 웹 변환 엔진의 파일 크기 한도를 넘어요.'); return; }
     converting = true; const token = ++conversionToken, urls = [], controller = new AbortController();
@@ -546,7 +548,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       const t = { id: crypto.randomUUID(), name: filename.replace(/\.mp3$/, ''), filename, size: blob.size, folderId, fingerprint, contentHash: await fileHash(blob), addedAt: Date.now(), duration: null };
       assertActive();
       const duplicate = await identicalTrack(blob,t.contentHash); assertActive();
-      if (duplicate) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(); return; }
+      if (duplicate) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(undefined,[duplicate.name]); return; }
       $('cancelConvert').disabled = true;
       await write(['tracks','files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(blob, t.id); });
       tracks.push(t); activeFolder = folderId; favoritesOnly = false; render(); saveState();
@@ -712,9 +714,9 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   for(const [id,symbol,label] of [['addToPlaylist','playlist','플레이리스트에 추가'],['playNext','next','바로 다음에 재생'],['exportSong','export','음악 파일 내보내기']])menuAction(id,symbol,label);
   $('searchIcon').innerHTML=icon('search');
 
-  function showFolderDuplicate(id) {
+  function showFolderDuplicate(id, names) {
     const name = folderName(id);
-    showDuplicate('이미 같은 곡이 '+name+(name.endsWith('함')?'':'함')+'에 저장되어 있습니다');
+    showDuplicate('이미 같은 곡이 '+name+(name.endsWith('함')?'':'함')+'에 저장되어 있습니다',names);
   }
   async function duplicateInFolder(t, destination) {
     if (t.folderId===destination) return true;
@@ -750,20 +752,20 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     const items=pendingBulkIds.map(track).filter(Boolean);if(!items.length)return;
     bulkBusy=true;setMaintenance(true);$('confirmBulkMove').disabled=true;$('confirmBulkMove').textContent='이동 중…';$('cancelBulkMove').disabled=true;
     try {
-      const changes=[];let duplicates=0;
+      const changes=[],duplicateNames=[];let duplicates=0;
       say('선택한 곡의 중복을 확인하고 이동 중…');
       for(const t of items){
-        if(await duplicateInFolder(t,destination)){duplicates++;continue;}
+        if(await duplicateInFolder(t,destination)){duplicates++;duplicateNames.push(t.name);continue;}
         const blob=await read('files',t.id);if(!blob)throw Error('음악 파일 없음');
         const hash=t.contentHash||await fileHash(blob);
-        if(changes.some(v=>v.size===t.size&&v.contentHash===hash)){duplicates++;continue;}
+        if(changes.some(v=>v.size===t.size&&v.contentHash===hash)){duplicates++;duplicateNames.push(t.name);continue;}
         changes.push({...t,folderId:destination,contentHash:hash});
       }
       if(changes.length)await write(['tracks'],tx=>{for(const t of changes)tx.objectStore('tracks').put(t);});
       for(const t of changes)Object.assign(track(t.id),t);
       $('bulkMoveMenu').close();selectedTracks.clear();render();updateMedia();saveState();
       say(changes.length+'곡 이동 완료'+(duplicates?' · 이미 저장된 '+duplicates+'곡 제외':''));
-      if(duplicates)showFolderDuplicate(destination);
+      if(duplicates)showFolderDuplicate(destination,duplicateNames);
     }catch{say('이동을 저장하지 못했어요. 다시 시도해 주세요.');}
     finally {bulkBusy=false;setMaintenance(false);$('confirmBulkMove').disabled=false;$('confirmBulkMove').textContent='이동';$('cancelBulkMove').disabled=false;render();}
   };
