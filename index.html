@@ -18,6 +18,14 @@ main{max-width:560px;margin:auto;padding:calc(env(safe-area-inset-top) + 18px) 2
 dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26px;padding:22px;width:calc(100% - 30px);max-width:450px;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain}dialog::backdrop{background:#0009;backdrop-filter:blur(6px)}dialog h3{font-size:21px;margin:0 0 18px;overflow-wrap:anywhere}dialog select{width:100%;padding:13px;border-radius:12px;color:#fff;background:#303033;border:0}dialog>button{display:block;width:100%;margin-top:9px;background:#303033;border-radius:12px;padding:10px;text-align:left}dialog>button:last-child{text-align:center;color:var(--accent)}dialog label:not(.add){display:block;font-size:13px;color:var(--muted);margin:12px 0 7px}.danger{color:#ff6574}.subtitle{font-size:13px;line-height:1.6;color:var(--muted)}progress{width:100%;height:8px;accent-color:var(--accent);margin-top:18px}#songMenu .menu-action{display:flex;gap:14px;align-items:center;background:transparent;border-radius:0;border-bottom:1px solid #ffffff12;margin:0;min-height:52px;padding:8px 0}.menu-action svg{color:var(--accent)}
 #nowPlaying{width:100%;max-width:560px;height:100dvh;max-height:100dvh;border:0;border-radius:0;margin:auto;background:linear-gradient(#152b33 0%,#121218 40%,#000 80%);padding:calc(env(safe-area-inset-top) + 14px) 28px calc(env(safe-area-inset-bottom) + 24px)}.player-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:20px}.player-top button{width:44px}.player-top span{letter-spacing:2px}.art{display:block;width:min(100%,360px);aspect-ratio:1;border-radius:22px;margin:0 auto 28px;object-fit:cover;box-shadow:0 24px 50px #0007}.title{font-size:24px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;letter-spacing:-.6px}.player-sub{display:flex;align-items:center;justify-content:space-between;gap:8px}.player-sub .subtitle{color:var(--accent);margin:5px 0}.player-sub button{width:44px;flex-shrink:0;color:var(--accent)}input[type=range]{width:100%;accent-color:#e3e3e7;height:6px;margin:24px 0 12px}.times{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.controls{display:flex;justify-content:space-around;align-items:center;margin:16px 0}.controls button{width:72px;height:66px;background:none;margin:0}.controls svg{width:32px;height:32px}.controls .play svg{width:44px;height:44px}.options{display:flex;justify-content:center;gap:10px}.repeat{border-radius:20px;color:var(--muted);padding:0 18px;background:#ffffff0c}.repeat[aria-pressed=true]{color:var(--accent);background:#ff375f15}.queue{margin-top:24px}.queue h4{font-size:14px;color:var(--muted)}.queue button{display:block;width:100%;text-align:left;font-size:14px;border-bottom:1px solid var(--line);padding:9px 0}.queue small{color:var(--accent);margin-right:8px}.settings-row{display:flex;align-items:center;gap:14px;padding:13px 0;font-size:16px;color:#fff}.settings-row svg{color:var(--accent)}.note{font-size:12px;color:var(--muted);line-height:1.8}.guide{font-size:13px;color:var(--muted);line-height:1.8}.guide b{color:#fff}.demo{color:var(--accent);padding:0}.setting-tools button,.setting-tools label{display:block;background:var(--panel);width:100%;border-radius:13px;padding:14px;text-align:left;color:#fff;margin:10px 0;cursor:pointer}details{margin:20px 0}summary{font-size:13px;color:var(--muted);cursor:pointer}#history{font-size:12px;line-height:1.8;color:var(--muted)}.pick-song{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px}.pick-song input{width:20px;height:20px;accent-color:var(--accent)}
 @media(max-height:750px){#nowPlaying .art{width:min(65vw,250px);margin-bottom:20px}.player-top{margin-bottom:12px}.controls{margin:9px 0}}
+#convertProgress{appearance:none;-webkit-appearance:none;border:0;border-radius:6px;overflow:hidden;background:#39393d;color:var(--accent)}
+#convertProgress::-webkit-progress-bar{background:#39393d;border-radius:6px}
+#convertProgress::-webkit-progress-value{background:var(--accent);border-radius:6px}
+#convertProgress::-moz-progress-bar{background:var(--accent);border-radius:6px}
+#convertMenu[data-state="complete"] #convertProgress{accent-color:#32b7ff;color:#32b7ff}
+#convertMenu[data-state="complete"] #convertProgress::-webkit-progress-value{background:#32b7ff}
+#convertMenu[data-state="complete"] #convertProgress::-moz-progress-bar{background:#32b7ff}
+#convertMenu[data-state="complete"] #convertStatus{color:#32b7ff;font-size:15px;font-weight:700}
 </style>
 </head>
 <body>
@@ -47,7 +55,7 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
 <p id="videoName" class="subtitle">선택한 영상 없음</p>
 <label for="convertFolder">저장할 폴더</label><select id="convertFolder"></select>
 <label for="bitrate">MP3 음질</label><select id="bitrate"><option value="192">192 kbps · 기본</option><option value="128">128 kbps · 작은 파일</option><option value="320">320 kbps · 큰 파일</option></select>
-<progress id="convertProgress" max="100" value="0"></progress><p id="convertStatus" class="status" role="status">처음 변환할 때 인터넷으로 변환 엔진을 준비합니다. 변환 중에는 화면을 켜 두세요.</p>
+<progress id="convertProgress" max="100" value="0" hidden></progress><p id="convertStatus" class="status" role="status">처음 변환할 때 인터넷으로 변환 엔진을 준비합니다. 변환 중에는 화면을 켜 두세요.</p>
 <button id="startConvert" disabled>변환하고 저장</button><button id="cancelConvert">닫기</button>
 </dialog>
 <script>
@@ -404,16 +412,23 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
     $('convertFolder').value = collection()?.kind !== 'playlist' && activeFolder !== 'all' ? activeFolder : 'library';
     $('convertMenu').showModal();
   };
+  function conversionDisplay(state, message) {
+    $('convertMenu').dataset.state = state;
+    $('convertProgress').hidden = state !== 'working' && state !== 'complete';
+    $('convertProgress').value = state === 'complete' ? 100 : 0;
+    $('convertStatus').textContent = message;
+  }
   $('videoPicker').onchange = event => {
     videoFile = event.target.files?.[0] || null;
     $('videoName').textContent = videoFile ? videoFile.name + ' · ' + sizeLabel(videoFile.size) : '선택한 영상 없음';
     $('startConvert').disabled = !videoFile;
+    conversionDisplay('idle', videoFile ? '준비 완료 · 변환하고 저장을 눌러 주세요.' : '영상을 선택해 주세요.');
   };
   function stopConversion() {
     conversionToken++; convertWorker?.terminate(); convertWorker = null;
   }
   $('cancelConvert').onclick = () => {
-    if (converting) { stopConversion(); $('convertStatus').textContent = '변환을 취소했어요. 원본은 유지됩니다.'; }
+    if (converting) { stopConversion(); conversionDisplay('cancelled', '변환을 취소했어요. 원본은 유지됩니다.'); }
     else $('convertMenu').close();
   };
   $('convertMenu').addEventListener('cancel', event => { if (converting) { event.preventDefault(); $('cancelConvert').click(); } });
@@ -429,11 +444,11 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
   $('startConvert').onclick = async () => {
     if (!videoFile || converting || importing || maintenance) return;
     const file = videoFile, folderId = $('convertFolder').value, bitrate = $('bitrate').value;
-    if (!file.size) { $('convertStatus').textContent = '비어 있는 영상이에요.'; return; }
-    if (file.size >= 2147483648) { $('convertStatus').textContent = '이 영상은 웹 변환 엔진의 파일 크기 한도를 넘어요.'; return; }
+    if (!file.size) { conversionDisplay('error', '비어 있는 영상이에요.'); return; }
+    if (file.size >= 2147483648) { conversionDisplay('error', '이 영상은 웹 변환 엔진의 파일 크기 한도를 넘어요.'); return; }
     converting = true; const token = ++conversionToken, urls = [], controller = new AbortController();
     $('startConvert').disabled = true; $('videoPicker').disabled = true; $('convertFolder').disabled = true; $('bitrate').disabled = true;
-    $('cancelConvert').textContent = '변환 취소'; $('convertProgress').value = 0;
+    $('cancelConvert').textContent = '변환 취소'; conversionDisplay('working', '변환을 시작하고 있어요…');
     let wakeLock;
     const assertActive = () => { if (token !== conversionToken) throw new Error('취소됨'); };
     let worker;
@@ -468,10 +483,10 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
       $('cancelConvert').disabled = true;
       await write(['tracks','files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(blob, t.id); });
       tracks.push(t); activeFolder = folderId; favoritesOnly = false; render(); saveState();
-      $('convertProgress').value = 100; $('convertStatus').textContent = '저장 완료 · ' + filename + ' · ' + sizeLabel(blob.size); say(folderName(folderId) + '에 MP3를 저장했어요. 곡을 눌러 재생하세요.');
+      conversionDisplay('complete', '✓ 변환 완료 · MP3 저장 완료\n' + filename + ' · ' + sizeLabel(blob.size) + ' · ' + folderName(folderId)); say(folderName(folderId) + '에 MP3를 저장했어요. 곡을 눌러 재생하세요.');
       if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
     } catch (error) {
-      $('convertStatus').textContent = token !== conversionToken ? '변환을 취소했어요. 원본은 유지됩니다.' : error.name === 'QuotaExceededError' ? '음악 저장 공간이 부족해요.' : '변환 실패: ' + error.message;
+      conversionDisplay(token !== conversionToken ? 'cancelled' : 'error', token !== conversionToken ? '변환을 취소했어요. 원본은 유지됩니다.' : error.name === 'QuotaExceededError' ? '음악 저장 공간이 부족해요.' : '변환 실패: ' + error.message);
     } finally {
       worker?.terminate(); if (convertWorker === worker) convertWorker = null;
       for (const url of urls) URL.revokeObjectURL(url);
