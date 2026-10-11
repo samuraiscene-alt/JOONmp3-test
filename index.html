@@ -1,118 +1,329 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="JOONmp3 테스트">
-  <link rel="apple-touch-icon" href="./icons/joonmp3-icon.png">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <title>JOONmp3 백그라운드 테스트</title>
-  <style>
-    :root{color-scheme:dark;--pink:#ff3b78;--muted:#929299;--line:#26262a}
-    *{box-sizing:border-box}
-    body{margin:0;background:#000;color:#f7f7f8;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Noto Sans KR",sans-serif}
-    main{min-height:100svh;max-width:520px;margin:auto;padding:calc(env(safe-area-inset-top) + 28px) 24px calc(env(safe-area-inset-bottom) + 28px);display:flex;flex-direction:column;align-items:center}
-    header{width:100%;display:flex;justify-content:space-between;align-items:center}
-    header img{width:42px;height:42px;border-radius:12px}
-    .tag{font-size:12px;color:#b9b9bf;border:1px solid #414146;border-radius:20px;padding:7px 11px}
-    .hero{margin:auto 0 24px;text-align:center}
-    .wave{font-size:76px;color:#00d4e8;line-height:1;margin-bottom:20px}
-    h1{font-size:28px;line-height:1.2;margin:0 0 10px}
-    .sub{color:var(--muted);font-size:15px;line-height:1.55;margin:0 auto;max-width:320px}
-    .track{width:100%;margin:4px 0 14px}
-    .track-title{font-size:20px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .track-artist{font-size:15px;color:var(--muted)}
-    .seek{width:100%;height:4px;accent-color:#f5f5f5;margin:18px 0 6px}
-    .times{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
-    .controls{display:flex;align-items:center;justify-content:center;gap:24px;margin:18px 0 24px}
-    button,.file-button{font:inherit;color:#fff;border:1px solid #48484d;background:#1b1b1e;border-radius:999px;padding:14px 18px;cursor:pointer}
-    button.primary{width:76px;height:76px;padding:0;border:0;background:#f6f6f7;color:#080809;font-size:28px}
-    button:active,.file-button:active{transform:scale(.97)}
-    .actions{width:100%;display:grid;gap:10px}
-    .actions button,.file-button{width:100%;display:flex;justify-content:center;align-items:center;gap:10px;min-height:54px}
-    .file-button{border-color:#38383c;background:transparent}
-    .status{min-height:42px;margin:15px 0 18px;color:#b9b9bf;font-size:14px;line-height:1.45;text-align:center}
-    .guide{width:100%;background:#171719;border:1px solid #29292c;border-radius:18px;padding:16px 18px;margin-bottom:14px}
-    .guide b{display:block;margin-bottom:8px;font-size:15px}
-    .guide p{margin:5px 0;color:#b4b4bb;font-size:13px;line-height:1.5}
-    .result{width:100%;display:none;border-radius:14px;padding:12px 14px;font-size:14px}
-    .result.ok{display:block;background:#112a1d;color:#95efb5}
-    .result.fail{display:block;background:#35171e;color:#ff9eac}
-    input[type=file]{display:none}
-    footer{color:#67676e;font-size:11px;text-align:center;margin-top:14px}
-    @media(min-height:850px){.hero{margin-top:54px}.controls{margin-top:28px;margin-bottom:34px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="JOONmp3">
+<link rel="apple-touch-icon" href="./icons/joonmp3-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>JOONmp3 · 음악함</title>
+<style>
+:root{color-scheme:dark;--accent:#ff3b78;--muted:#929299;--line:#29292d}
+*{box-sizing:border-box}body{margin:0;background:#000;color:#f7f7f8;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+main{max-width:540px;margin:auto;padding:calc(env(safe-area-inset-top) + 22px) 22px calc(env(safe-area-inset-bottom) + 32px)}
+header{display:flex;align-items:center;justify-content:space-between}header h1{font-size:32px;margin:0}header img{width:40px;height:40px;border-radius:11px}.version{color:var(--muted);font-size:12px;margin:5px 0 22px}
+button,label,select{font:inherit}button{cursor:pointer;color:inherit;border:0;background:none;min-height:44px}button:disabled{opacity:.4;cursor:default}button:active:not(:disabled){opacity:.65}
+.art{width:150px;height:150px;display:block;margin:12px auto 24px;border-radius:25px;box-shadow:0 16px 40px #00d4e81a}.title{font-size:23px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subtitle{color:var(--muted);font-size:14px;margin-top:6px}
+input[type=range]{width:100%;accent-color:#fff;height:6px;margin:23px 0 10px}.times{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.controls{display:flex;justify-content:center;align-items:center;gap:32px;margin:13px 0}.controls button{width:56px;height:60px;font-size:29px}.controls .play{font-size:39px;width:74px}.options{display:flex;justify-content:center;margin-bottom:20px}.repeat{border-radius:20px;padding:0 18px;color:var(--muted);background:#18181c}.repeat[aria-pressed=true]{color:var(--accent);background:#ff3b781b}
+.add{display:block;text-align:center;width:100%;background:var(--accent);border-radius:15px;padding:15px;font-weight:600;cursor:pointer}.add.disabled{opacity:.4;pointer-events:none}input[type=file]{display:none}
+.status{font-size:13px;color:#b4b4bc;min-height:36px;margin:13px 0;line-height:1.5}.folders{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px}.folders button{flex-shrink:0;border-radius:22px;padding:0 15px;background:#1c1c20;font-size:14px}.folders button[aria-pressed=true]{background:#fff;color:#000}.folders .new{color:var(--accent)}
+.library-head{display:flex;justify-content:space-between;align-items:center;margin:9px 0}.library-head h2{font-size:21px;margin:0}.count{font-size:12px;color:var(--muted)}.empty{color:var(--muted);text-align:center;padding:30px 10px;line-height:1.7}
+.row{display:flex;align-items:center;border-bottom:1px solid var(--line);gap:9px;min-height:74px}.song{display:flex;align-items:center;gap:13px;flex:1;min-width:0;text-align:left;padding:12px 0}.number{font-size:14px;width:25px;text-align:center;color:var(--muted);flex-shrink:0}.song-info{min-width:0}.song-name{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.song-detail{display:block;font-size:12px;color:var(--muted);margin-top:5px}.row.current .song-name,.row.current .number{color:var(--accent)}.more{font-size:24px;color:var(--muted);width:44px;flex-shrink:0}
+.guide{background:#18181c;border-radius:17px;padding:16px;margin-top:24px;font-size:13px;line-height:1.7;color:#b7b7be}.guide b{color:#fff}.demo{color:var(--accent);padding:0;text-align:left}.note{font-size:11px;color:#777780;line-height:1.6;margin-top:16px}
+dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px;padding:22px;width:calc(100% - 44px);max-width:420px}dialog::backdrop{background:#0009}dialog h3{font-size:20px;margin:0 0 18px;overflow-wrap:anywhere}dialog select{width:100%;padding:13px;border-radius:12px;color:#fff;background:#333338;border:0}dialog button{display:block;width:100%;margin-top:10px;background:#35353b;border-radius:12px;padding:8px}.danger{color:#ff6a74}#history{font-size:12px;color:var(--muted);line-height:1.8}details{margin-top:17px}summary{cursor:pointer;font-size:13px;color:var(--muted)}
+</style>
 </head>
 <body>
 <main>
-  <header>
-    <img src="./icons/joonmp3-icon.png" alt="JOONmp3">
-    <span class="tag">백그라운드 재생 확인용</span>
-  </header>
-  <section class="hero">
-    <div class="wave" aria-hidden="true">♫</div>
-    <h1>화면을 꺼도<br>음악이 재생될까?</h1>
-    <p class="sub">음악을 재생한 뒤 화면을 잠그고 1분 정도 들어보세요. 이 테스트가 통과해야 다음 단계로 넘어갑니다.</p>
-  </section>
-  <section class="track" aria-live="polite">
-    <div id="trackTitle" class="track-title">JOON 테스트 음악</div>
-    <div class="track-artist">JOONmp3</div>
-    <input id="seek" class="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치">
-    <div class="times"><span id="elapsed">0:00</span><span id="remaining">−0:24</span></div>
-  </section>
-  <div class="controls">
-    <button id="restart" aria-label="처음부터">⟲</button>
-    <button id="toggle" class="primary" aria-label="재생">▶</button>
-    <button id="stop" aria-label="정지">■</button>
-  </div>
-  <div class="actions">
-    <button id="testButton">테스트 음악 재생</button>
-    <label class="file-button" for="filePicker">내 MP3 파일 선택</label>
-    <input id="filePicker" type="file" accept="audio/*,.mp3,.m4a,.wav">
-  </div>
-  <p id="status" class="status">먼저 재생을 누른 뒤, 아이폰 측면 버튼으로 화면을 잠그세요.</p>
-  <div id="result" class="result"></div>
-  <section class="guide">
-    <b>테스트 방법</b>
-    <p>① 테스트 음악 재생 → ② 아이폰 화면 잠금 → ③ 1분 후에도 소리가 계속 나는지 확인</p>
-    <p>잠금화면에서 일시정지·재생 버튼도 눌러보세요. Safari와 홈 화면에 추가한 앱에서 각각 시험하면 차이를 확인할 수 있어요.</p>
-  </section>
-  <footer>이 화면은 기능 검증용 시제품입니다. 테스트 음악은 반복 재생됩니다.</footer>
-  <audio id="audio" preload="auto" loop playsinline src="./background-test.wav"></audio>
+<header><h1>음악함</h1><img src="./icons/joonmp3-icon.png" alt="JOONmp3"></header>
+<div class="version">JOONmp3 · v2 연속 재생 테스트</div>
+<img class="art" src="./icons/joonmp3-icon.png" alt="">
+<section aria-label="현재 곡"><div id="trackTitle" class="title">음악을 추가해 주세요</div><div id="trackSubtitle" class="subtitle">아이폰에 저장하고 계속 듣기</div>
+<input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치" disabled>
+<div class="times"><span id="elapsed">0:00</span><span id="remaining">−0:00</span></div></section>
+<div class="controls"><button id="previous" aria-label="이전 곡">⏮</button><button id="toggle" class="play" aria-label="재생">▶</button><button id="next" aria-label="다음 곡">⏭</button></div>
+<div class="options"><button id="repeat" class="repeat" aria-pressed="true">↻ 전체 반복</button></div>
+<label id="addLabel" class="add disabled" for="filePicker">＋ 음악 추가 · 여러 곡 선택</label>
+<input id="filePicker" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav" multiple disabled>
+<p id="status" class="status" role="status">저장된 음악을 불러오는 중…</p>
+<nav id="folders" class="folders" aria-label="음악 폴더"></nav>
+<div class="library-head"><h2 id="folderTitle">전체 음악</h2><span id="count" class="count">0곡</span></div>
+<div id="trackList"></div>
+<section class="guide"><b>연속 재생 확인</b><br>2곡 이상 추가 → 첫 곡 재생 → 화면 잠금.<br>곡이 끝나면 다음 곡으로 넘어가는지, 10분 이상 이어지는지 들어보세요. 전체 반복을 켜면 마지막 곡 다음에 첫 곡이 재생됩니다.<br><button id="demo" class="demo" disabled>짧은 테스트 음악 2곡 추가</button></section>
+<details><summary>최근 곡 전환 기록</summary><div id="history">아직 기록이 없습니다.</div></details>
+<p class="note">음악은 이 기기의 브라우저 저장 공간에 보관됩니다. 웹사이트 데이터를 지우면 저장된 음악도 지워집니다. Safari와 홈 화면 앱의 저장 공간이 다르면 각각 추가해 주세요.</p>
+<audio id="audio" preload="auto" playsinline></audio>
 </main>
+<dialog id="songMenu"><h3 id="menuTitle"></h3><label for="moveFolder">이동할 폴더</label><select id="moveFolder"></select><button id="moveSong">폴더로 이동</button><button id="deleteSong" class="danger">음악함에서 삭제</button><button id="closeMenu">닫기</button></dialog>
 <script>
+'use strict';
 (() => {
-  const audio=document.getElementById('audio');
-  const toggle=document.getElementById('toggle');
-  const status=document.getElementById('status');
-  const result=document.getElementById('result');
-  const title=document.getElementById('trackTitle');
-  const seek=document.getElementById('seek');
-  const elapsed=document.getElementById('elapsed');
-  const remaining=document.getElementById('remaining');
-  const fmt=n=>{n=Math.max(0,Math.floor(n||0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
-  function setTitle(t){title.textContent=t;if('mediaSession' in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:t,artist:'JOONmp3 백그라운드 테스트'});}}
-  function showPlaying(){toggle.textContent='Ⅱ';toggle.setAttribute('aria-label','일시정지');status.textContent='재생 중이에요. 화면을 잠가서 계속 재생되는지 확인하세요.';result.className='result';}
-  function showPaused(){toggle.textContent='▶';toggle.setAttribute('aria-label','재생');status.textContent='일시정지됐어요.'}
-  async function play(){try{await audio.play();showPlaying();}catch(e){status.textContent='재생을 시작하지 못했어요. 재생 버튼을 다시 눌러주세요.';}}
-  function pause(){audio.pause();showPaused();}
-  document.getElementById('testButton').addEventListener('click',()=>{audio.src='./background-test.wav';audio.loop=true;audio.load();setTitle('JOON 테스트 음악');play();});
-  toggle.addEventListener('click',()=>audio.paused?play():pause());
-  document.getElementById('restart').addEventListener('click',()=>{audio.currentTime=0;play();});
-  document.getElementById('stop').addEventListener('click',()=>{pause();audio.currentTime=0;});
-  document.getElementById('filePicker').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;audio.src=URL.createObjectURL(f);audio.loop=false;audio.load();setTitle(f.name.replace(/\.[^.]+$/,''));play();});
-  audio.addEventListener('play',showPlaying);
-  audio.addEventListener('pause',showPaused);
-  audio.addEventListener('timeupdate',()=>{const d=audio.duration||24;seek.value=String(Math.round(audio.currentTime/d*1000));elapsed.textContent=fmt(audio.currentTime);remaining.textContent='−'+fmt(d-audio.currentTime);});
-  seek.addEventListener('input',()=>{if(audio.duration)audio.currentTime=Number(seek.value)/1000*audio.duration;});
-  audio.addEventListener('error',()=>{status.textContent='테스트 소리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.';});
-  if('mediaSession' in navigator){
-    try{navigator.mediaSession.setActionHandler('play',play);navigator.mediaSession.setActionHandler('pause',pause);navigator.mediaSession.setActionHandler('seekto',d=>{if(Number.isFinite(d.seekTime))audio.currentTime=d.seekTime;});}catch{}
+  const $ = id => document.getElementById(id);
+  const audio = $('audio');
+  const STATE_KEY = 'joonmp3-v2-state';
+  let db, tracks = [], folders = [], queue = [], activeFolder = 'all', currentId = null;
+  let repeatAll = true, importing = false, selectedId = null, playGeneration = 0, lastSaved = 0;
+  let restoreAt = 0, history = [], prepared = new Map(), preparing = new Map();
+  let ready = false;
+  const fmt = n => { n = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
+  const sizeLabel = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' KB';
+  const track = id => tracks.find(t => t.id === id);
+  const folderName = id => folders.find(f => f.id === id)?.name || '음악함';
+  const visibleTracks = () => tracks.filter(t => activeFolder === 'all' || t.folderId === activeFolder);
+  function say(message) { $('status').textContent = message; }
+  function saveState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify({ currentId, position: audio.currentTime || 0, repeatAll, activeFolder, queue, history })); } catch {}
   }
-  if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('joonmp3-music-library', 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        database.createObjectStore('tracks', { keyPath: 'id' });
+        database.createObjectStore('files');
+        database.createObjectStore('folders', { keyPath: 'id' });
+      };
+      request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); };
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => say('다른 JOONmp3 창을 닫고 다시 열어 주세요.');
+    });
+  }
+  function read(store, key) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const request = key === undefined ? tx.objectStore(store).getAll() : tx.objectStore(store).get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  function write(stores, operation) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(stores, 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error || new Error('저장 실패'));
+      try { operation(tx); } catch (error) { tx.abort(); reject(error); }
+    });
+  }
+  async function prepare(id) {
+    if (!id || !track(id)) return null;
+    if (prepared.has(id)) return prepared.get(id);
+    if (preparing.has(id)) return preparing.get(id);
+    const pending = read('files', id).then(blob => {
+      if (!blob || !track(id)) throw new Error('음악 파일이 없습니다.');
+      const url = URL.createObjectURL(blob); prepared.set(id, url); return url;
+    }).finally(() => preparing.delete(id));
+    preparing.set(id, pending); return pending;
+  }
+  function nextId() {
+    const index = queue.indexOf(currentId);
+    if (index < 0) return queue[0] || null;
+    return queue[index + 1] || (repeatAll ? queue[0] : null);
+  }
+  function warmNext() {
+    const id = nextId();
+    if (id) prepare(id).catch(() => say('다음 곡을 준비하지 못했어요. 파일을 다시 추가해 주세요.'));
+    const keep = new Set([currentId, id]);
+    for (const [key, url] of prepared) if (!keep.has(key)) { URL.revokeObjectURL(url); prepared.delete(key); }
+  }
+  function updateMedia() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      const t = track(currentId);
+      navigator.mediaSession.metadata = t ? new MediaMetadata({ title: t.name, artist: 'JOONmp3', album: folderName(t.folderId), artwork: [{ src: new URL('./icons/joonmp3-icon.png', location.href).href, sizes: '512x512', type: 'image/png' }] }) : null;
+      navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+      if (navigator.mediaSession.setPositionState && Number.isFinite(audio.duration) && audio.duration > 0) navigator.mediaSession.setPositionState({ duration: audio.duration, playbackRate: audio.playbackRate, position: Math.min(audio.currentTime, audio.duration) });
+    } catch {}
+  }
+  function renderHistory() {
+    $('history').replaceChildren();
+    if (!history.length) { $('history').textContent = '아직 기록이 없습니다.'; return; }
+    for (const entry of history.slice().reverse()) {
+      const line = document.createElement('div');
+      line.textContent = new Date(entry.at).toLocaleTimeString('ko-KR', { hour12: false }) + ' · ' + entry.name + ' · ' + entry.reason;
+      $('history').append(line);
+    }
+  }
+  function record(reason) {
+    history.push({ at: Date.now(), name: track(currentId)?.name || '', reason });
+    history = history.slice(-20); renderHistory(); saveState();
+  }
+  function render() {
+    $('folders').replaceChildren();
+    for (const f of [{ id: 'all', name: '전체' }, ...folders]) {
+      const button = document.createElement('button'); button.textContent = f.name;
+      button.setAttribute('aria-pressed', String(f.id === activeFolder));
+      button.onclick = () => { activeFolder = f.id; render(); saveState(); };
+      $('folders').append(button);
+    }
+    const add = document.createElement('button'); add.textContent = '＋ 폴더'; add.className = 'new'; add.disabled = !ready; add.onclick = createFolder; $('folders').append(add);
+    const list = visibleTracks();
+    $('folderTitle').textContent = activeFolder === 'all' ? '전체 음악' : folderName(activeFolder);
+    $('count').textContent = list.length + '곡 · ' + sizeLabel(list.reduce((sum, t) => sum + t.size, 0));
+    $('trackList').replaceChildren();
+    if (!list.length) { const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = '음악 추가를 눌러 여러 곡을 담아 주세요.'; $('trackList').append(empty); }
+    list.forEach((t, index) => {
+      const row = document.createElement('div'); row.className = 'row' + (t.id === currentId ? ' current' : '');
+      const button = document.createElement('button'); button.className = 'song'; button.dataset.id = t.id;
+      const number = document.createElement('span'); number.className = 'number'; number.textContent = t.id === currentId && !audio.paused ? '♫' : index + 1;
+      const info = document.createElement('span'); info.className = 'song-info';
+      const name = document.createElement('span'); name.className = 'song-name'; name.textContent = t.name;
+      const detail = document.createElement('span'); detail.className = 'song-detail'; detail.textContent = folderName(t.folderId) + ' · ' + (t.duration ? fmt(t.duration) + ' · ' : '') + sizeLabel(t.size);
+      info.append(name, detail); button.append(number, info);
+      button.onclick = () => { queue = visibleTracks().map(item => item.id); choose(t.id, true, '곡 선택'); };
+      const more = document.createElement('button'); more.className = 'more'; more.textContent = '···'; more.setAttribute('aria-label', t.name + ' 메뉴'); more.onclick = () => openMenu(t.id);
+      row.append(button, more); $('trackList').append(row);
+    });
+    const t = track(currentId);
+    $('trackTitle').textContent = t?.name || '음악을 추가해 주세요';
+    $('trackSubtitle').textContent = t ? folderName(t.folderId) + ' · ' + (Math.max(0, queue.indexOf(currentId)) + 1) + ' / ' + queue.length + '곡' : '아이폰에 저장하고 계속 듣기';
+    $('repeat').setAttribute('aria-pressed', String(repeatAll));
+  }
+  function resetProgress() { $('seek').value = 0; $('elapsed').textContent = '0:00'; $('remaining').textContent = '−0:00'; $('seek').disabled = true; }
+  function loadPrepared(id, reason, autoPlay) {
+    if (!track(id) || !prepared.has(id)) return false;
+    playGeneration++; currentId = id; restoreAt = 0;
+    audio.loop = false; audio.src = prepared.get(id); audio.load();
+    resetProgress(); render(); updateMedia(); record(reason); warmNext();
+    if (autoPlay) play(); else say('곡을 선택했어요. 재생 버튼을 눌러 주세요.');
+    return true;
+  }
+  async function choose(id, autoPlay = true, reason = '곡 선택') {
+    const generation = ++playGeneration;
+    try {
+      await prepare(id);
+      if (generation !== playGeneration) return;
+      loadPrepared(id, reason, autoPlay);
+    } catch { if (generation === playGeneration) say('파일을 불러오지 못했어요. 곡을 다시 추가해 주세요.'); }
+  }
+  function play() {
+    if (!currentId) {
+      queue = visibleTracks().map(t => t.id);
+      if (!queue.length) { say('먼저 음악을 추가해 주세요.'); return; }
+      choose(queue[0]); return;
+    }
+    const generation = playGeneration;
+    audio.play().catch(() => { if (generation === playGeneration) say('재생이 중단됐어요. 재생 버튼을 눌러 주세요.'); });
+  }
+  function advance(reason = '다음 곡') {
+    const id = nextId();
+    if (!id) { say('모든 곡을 재생했어요.'); saveState(); return; }
+    // Keep the same HTMLAudioElement and start a prepared URL immediately in ended.
+    if (!loadPrepared(id, reason, true)) choose(id, true, reason);
+  }
+  function previous() {
+    if (!currentId) { play(); return; }
+    if (audio.currentTime > 3) { audio.currentTime = 0; play(); return; }
+    const index = queue.indexOf(currentId);
+    choose(queue[index > 0 ? index - 1 : repeatAll ? queue.length - 1 : 0], true, '이전 곡');
+  }
+  async function createFolder() {
+    const raw = prompt('새 폴더 이름'); if (raw === null) return;
+    const name = raw.trim().slice(0, 40); if (!name) return;
+    if (folders.some(f => f.name === name)) { say('같은 이름의 폴더가 있어요.'); return; }
+    const f = { id: crypto.randomUUID(), name, createdAt: Date.now() };
+    try { await write(['folders'], tx => tx.objectStore('folders').put(f)); folders.push(f); activeFolder = f.id; render(); saveState(); say(name + ' 폴더를 만들었어요.'); } catch { say('폴더를 저장하지 못했어요.'); }
+  }
+  async function addFiles(files) {
+    if (!ready || importing) return;
+    importing = true; $('filePicker').disabled = true; $('demo').disabled = true; $('addLabel').classList.add('disabled');
+    const targetFolder = activeFolder === 'all' ? 'library' : activeFolder;
+    let added = 0, duplicates = 0, failed = 0;
+    try {
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index]; say((index + 1) + ' / ' + files.length + '곡 저장 중…');
+        if (!file.size || (!file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(file.name))) { failed++; continue; }
+        const fingerprint = file.name + ':' + file.size + ':' + file.lastModified;
+        if (tracks.some(t => t.fingerprint === fingerprint)) { duplicates++; continue; }
+        const t = { id: crypto.randomUUID(), name: file.name.replace(/\.[^.]+$/, ''), filename: file.name, size: file.size, folderId: targetFolder, fingerprint, addedAt: Date.now(), duration: null };
+        const mime = file.type || (/\.mp3$/i.test(file.name) ? 'audio/mpeg' : /\.m4a$/i.test(file.name) ? 'audio/mp4' : /\.wav$/i.test(file.name) ? 'audio/wav' : 'audio/aac');
+        try {
+          await write(['tracks', 'files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(file.slice(0, file.size, mime), t.id); });
+          tracks.push(t); added++;
+        } catch (error) { failed += files.length - index; say(error.name === 'QuotaExceededError' ? '저장 공간이 부족해요.' : '음악 저장에 실패했어요.'); break; }
+      }
+      render();
+      if (!currentId && tracks.length) { queue = visibleTracks().map(t => t.id); if (queue.length) await choose(queue[0], false, '음악 준비'); }
+      say(added + '곡 저장 완료' + (duplicates ? ' · 중복 ' + duplicates + '곡 제외' : '') + (failed ? ' · ' + failed + '곡 저장 실패 — 공간과 파일을 확인해 주세요.' : '') + '. 곡을 눌러 재생하세요.');
+      if (added && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+    } finally { importing = false; $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled'); $('filePicker').value = ''; }
+  }
+  function openMenu(id) {
+    selectedId = id; const t = track(id); if (!t) return;
+    $('menuTitle').textContent = t.name; $('moveFolder').replaceChildren();
+    for (const f of folders) { const option = document.createElement('option'); option.value = f.id; option.textContent = f.name; $('moveFolder').append(option); }
+    $('moveFolder').value = t.folderId; $('songMenu').showModal();
+  }
+  $('moveSong').onclick = async () => {
+    const t = track(selectedId); if (!t) return;
+    const updated = { ...t, folderId: $('moveFolder').value };
+    try { await write(['tracks'], tx => tx.objectStore('tracks').put(updated)); Object.assign(t, updated); $('songMenu').close(); render(); updateMedia(); say(folderName(t.folderId) + ' 폴더로 이동했어요.'); } catch { say('이동을 저장하지 못했어요.'); }
+  };
+  $('deleteSong').onclick = async () => {
+    const t = track(selectedId); if (!t || !confirm('“' + t.name + '”을 음악함에서 삭제할까요? 원본 파일은 유지됩니다.')) return;
+    try {
+      await write(['tracks', 'files'], tx => { tx.objectStore('tracks').delete(t.id); tx.objectStore('files').delete(t.id); });
+      playGeneration++; tracks = tracks.filter(item => item.id !== t.id); queue = queue.filter(id => id !== t.id);
+      if (currentId === t.id) { audio.pause(); audio.removeAttribute('src'); audio.load(); currentId = null; resetProgress(); }
+      if (prepared.has(t.id)) { URL.revokeObjectURL(prepared.get(t.id)); prepared.delete(t.id); }
+      $('songMenu').close(); render(); warmNext(); saveState(); updateMedia(); say('음악함에서 삭제했어요.');
+    } catch { say('삭제하지 못했어요. 다시 시도해 주세요.'); }
+  };
+  $('closeMenu').onclick = () => $('songMenu').close();
+  $('filePicker').onchange = event => addFiles(Array.from(event.target.files || []));
+  $('toggle').onclick = () => audio.paused ? play() : audio.pause();
+  $('previous').onclick = previous;
+  $('next').onclick = () => { if (!currentId) play(); else advance(); };
+  $('repeat').onclick = () => { repeatAll = !repeatAll; render(); warmNext(); saveState(); };
+  $('seek').oninput = () => { if (Number.isFinite(audio.duration)) { audio.currentTime = Number($('seek').value) / 1000 * audio.duration; updateMedia(); saveState(); } };
+  audio.addEventListener('play', () => { $('toggle').textContent = 'Ⅱ'; $('toggle').setAttribute('aria-label', '일시정지'); say('재생 중 · 화면을 잠그고 곡 전환을 확인해 주세요.'); render(); updateMedia(); });
+  audio.addEventListener('pause', () => { $('toggle').textContent = '▶'; $('toggle').setAttribute('aria-label', '재생'); render(); updateMedia(); saveState(); });
+  audio.addEventListener('ended', () => advance('곡 종료 → 자동 재생'));
+  audio.addEventListener('loadedmetadata', () => {
+    $('seek').disabled = !Number.isFinite(audio.duration);
+    if (restoreAt && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(restoreAt, Math.max(0, audio.duration - .1)); restoreAt = 0; }
+    const t = track(currentId);
+    if (t && Number.isFinite(audio.duration)) { t.duration = audio.duration; write(['tracks'], tx => tx.objectStore('tracks').put(t)).catch(() => {}); render(); }
+    updateMedia();
+  });
+  audio.addEventListener('timeupdate', () => {
+    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    $('seek').value = duration ? Math.round(audio.currentTime / duration * 1000) : 0;
+    $('elapsed').textContent = fmt(audio.currentTime); $('remaining').textContent = '−' + fmt(duration - audio.currentTime);
+    if (Date.now() - lastSaved > 5000) { lastSaved = Date.now(); saveState(); }
+  });
+  audio.addEventListener('error', () => { if (currentId && audio.getAttribute('src')) say('이 곡을 재생하지 못했어요. 다른 MP3 파일로 시험해 주세요.'); });
+  if ('mediaSession' in navigator) {
+    const handlers = { play, pause: () => audio.pause(), nexttrack: () => advance('잠금화면 다음 곡'), previoustrack: previous, seekto: data => { if (Number.isFinite(data.seekTime) && Number.isFinite(audio.duration)) audio.currentTime = Math.max(0, Math.min(data.seekTime, audio.duration)); }, seekbackward: data => { audio.currentTime = Math.max(0, audio.currentTime - (data.seekOffset || 10)); }, seekforward: data => { if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(audio.duration, audio.currentTime + (data.seekOffset || 10)); } };
+    for (const [name, handler] of Object.entries(handlers)) try { navigator.mediaSession.setActionHandler(name, handler); } catch {}
+  }
+  function demoFile(number) {
+    const rate = 22050, seconds = 12, samples = rate * seconds;
+    const bytes = new ArrayBuffer(44 + samples * 2), view = new DataView(bytes);
+    const text = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
+    text(0, 'RIFF'); view.setUint32(4, 36 + samples * 2, true); text(8, 'WAVE'); text(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, samples * 2, true);
+    const notes = number === 1 ? [261.63, 329.63, 392, 523.25] : [440, 392, 349.23, 329.63];
+    for (let i = 0; i < samples; i++) { const t = i / rate, phase = t % .5; const envelope = Math.min(1, phase / .025) * Math.max(0, 1 - phase / .5) * Math.min(1, (seconds - t) / .1); view.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * notes[Math.floor(t * 2) % 4] * t) * envelope * 5000), true); }
+    return new File([bytes], '테스트 음악 ' + number + '.wav', { type: 'audio/wav', lastModified: 0 });
+  }
+  $('demo').onclick = () => addFiles([demoFile(1), demoFile(2)]);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); });
+  window.addEventListener('pagehide', saveState);
+  async function boot() {
+    try {
+      db = await openDB();
+      folders = await read('folders');
+      if (!folders.some(f => f.id === 'library')) { const f = { id: 'library', name: '음악함', createdAt: 0 }; await write(['folders'], tx => tx.objectStore('folders').put(f)); folders.unshift(f); }
+      tracks = (await read('tracks')).sort((a, b) => a.addedAt - b.addedAt);
+      let saved = {}; try { saved = JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch {}
+      repeatAll = saved.repeatAll !== false;
+      activeFolder = saved.activeFolder === 'all' || folders.some(f => f.id === saved.activeFolder) ? saved.activeFolder : 'all';
+      queue = Array.isArray(saved.queue) ? saved.queue.filter(id => track(id)) : [];
+      if (!queue.length) queue = visibleTracks().map(t => t.id);
+      history = Array.isArray(saved.history) ? saved.history.slice(-20) : [];
+      ready = true; render(); renderHistory(); $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled');
+      const id = track(saved.currentId) ? saved.currentId : queue[0];
+      if (id) { await choose(id, false, '저장된 곡 준비'); restoreAt = Number(saved.position) || 0; }
+      say(tracks.length ? tracks.length + '곡을 불러왔어요. 곡을 눌러 재생하세요.' : '여러 MP3를 한 번에 추가하거나 테스트 음악 2곡을 담아 주세요.');
+    } catch { say('음악 저장 공간을 열지 못했어요. 일반 Safari 창에서 다시 열어 주세요.'); }
+  }
+  boot();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(() => {});
+  }
 })();
 </script>
 </body>
