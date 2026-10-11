@@ -293,7 +293,7 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
   $('repeat').onclick = () => { repeatAll = !repeatAll; render(); warmNext(); saveState(); };
   $('seek').oninput = () => { if (Number.isFinite(audio.duration)) { audio.currentTime = Number($('seek').value) / 1000 * audio.duration; updateMedia(); saveState(); } };
   audio.addEventListener('play', () => { $('toggle').innerHTML = icon('pause'); $('toggle').setAttribute('aria-label', '일시정지'); say('재생 중 · ' + (track(currentId)?.name || '')); render(); updateMedia(); });
-  audio.addEventListener('pause', () => { $('toggle').innerHTML = icon('play'); $('toggle').setAttribute('aria-label', '재생'); render(); updateMedia(); saveState(); });
+  audio.addEventListener('pause', () => { if (currentId) say('일시정지 · ' + (track(currentId)?.name || '')); $('toggle').innerHTML = icon('play'); $('toggle').setAttribute('aria-label', '재생'); render(); updateMedia(); saveState(); });
   audio.addEventListener('ended', () => advance('곡 종료 → 자동 재생'));
   audio.addEventListener('loadedmetadata', () => {
     $('seek').disabled = !Number.isFinite(audio.duration);
