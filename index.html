@@ -32,9 +32,11 @@ dialog h3,.player-top,#nowPlaying .art{touch-action:none;user-select:none;-webki
 #nowPlaying .art{-webkit-user-drag:none;cursor:grab}
 dialog[data-dragging="true"]{user-select:none;will-change:transform}
 @media(prefers-reduced-motion:reduce){dialog{transition:none!important}}
+.duplicate-toast{position:fixed;z-index:1000;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:18px 20px;border:1px solid #ffffff30;border-radius:18px;background:#303033f5;backdrop-filter:blur(20px);color:#fff;text-align:center;font-size:15px;line-height:1.6;box-shadow:0 12px 40px #0008;pointer-events:none}
 </style>
 </head>
 <body>
+<div id="duplicateToast" class="duplicate-toast" role="status" aria-live="polite" hidden></div>
 <main>
 <header><div class="brand"><img src="./icons/joonmp3-icon.png" alt="JOONmp3"><span>JOONmp3</span></div><div class="header-actions"><button id="headerAdd" class="circle" aria-label="새 항목 추가"></button><button id="headerSettings" class="circle" aria-label="설정"></button></div></header>
 <button id="collectionBack" hidden style="color:var(--accent);padding:0;text-align:left">‹ 플레이리스트와 폴더</button><h1 id="pageTitle">보관함</h1><p class="version">v4 · 나만의 음악</p>
@@ -89,6 +91,35 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     return list.slice().sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || (sortBy === 'title' ? a.name.localeCompare(b.name,'ko') : f?.kind === 'playlist' ? 0 : a.addedAt - b.addedAt));
   };
   function say(message) { $('status').textContent = message; }
+  let duplicateTimer = null;
+  function showDuplicate() {
+    const toast = $('duplicateToast');
+    const sheet = ['convertMenu','songMenu','songPicker','playlistPicker','collectionMenu','addMenu','nowPlaying'].map($).find(v=>v.open);
+    (sheet || document.body).prepend(toast);
+    toast.textContent = '이미 같은 곡이 플레이어에 저장되어 있습니다';
+    toast.hidden = false;
+    clearTimeout(duplicateTimer);
+    duplicateTimer = setTimeout(() => { toast.hidden = true; },3000);
+  }
+  async function fileHash(blob) {
+    const hash = await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());
+    return Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  async function identicalTrack(blob, hash) {
+    for (const t of tracks.filter(v=>v.size===blob.size)) {
+      let savedHash = t.contentHash;
+      if (!savedHash) {
+        const saved = await read('files',t.id);
+        if (!saved) continue;
+        savedHash = await fileHash(saved);
+        t.contentHash = savedHash;
+        write(['tracks'],tx=>tx.objectStore('tracks').put({...t})).catch(()=>{});
+      }
+      if (savedHash === hash) return t;
+    }
+    return null;
+  }
+
   function saveState() {
     try { localStorage.setItem(STATE_KEY, JSON.stringify({ currentId, position: audio.currentTime || 0, repeatAll, activeFolder, queue, history, view, sortBy })); } catch {}
   }
@@ -248,7 +279,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     try { await write(['folders'], tx => tx.objectStore('folders').put(f)); folders.push(f); activeFolder = f.id; view = 'library'; favoritesOnly = false; render(); saveState(); say(name + ' 폴더를 만들었어요.'); } catch { say('폴더를 저장하지 못했어요.'); }
   }
   async function addFiles(files) {
-    if (!ready || importing || maintenance) return;
+    if (!ready || importing || maintenance || converting) return;
     importing = true; $('filePicker').disabled = true; $('demo').disabled = true; $('addLabel').classList.add('disabled');
     const targetFolder = collection()?.kind !== 'playlist' && activeFolder !== 'all' ? activeFolder : 'library';
     let added = 0, duplicates = 0, failed = 0;
@@ -257,8 +288,10 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
         const file = files[index]; say((index + 1) + ' / ' + files.length + '곡 저장 중…');
         if (!file.size || (!file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(file.name))) { failed++; continue; }
         const fingerprint = file.name + ':' + file.size + ':' + file.lastModified;
-        if (tracks.some(t => t.fingerprint === fingerprint)) { duplicates++; continue; }
-        const t = { id: crypto.randomUUID(), name: file.name.replace(/\.[^.]+$/, ''), filename: file.name, size: file.size, folderId: targetFolder, fingerprint, addedAt: Date.now(), duration: null };
+        let contentHash;
+        try { contentHash = await fileHash(file); if (await identicalTrack(file,contentHash)) { duplicates++; continue; } }
+        catch { failed++; continue; }
+        const t = { id: crypto.randomUUID(), name: file.name.replace(/\.[^.]+$/, ''), filename: file.name, size: file.size, folderId: targetFolder, fingerprint, contentHash, addedAt: Date.now(), duration: null };
         const mime = file.type || (/\.mp3$/i.test(file.name) ? 'audio/mpeg' : /\.m4a$/i.test(file.name) ? 'audio/mp4' : /\.wav$/i.test(file.name) ? 'audio/wav' : 'audio/aac');
         try {
           await write(['tracks', 'files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(file.slice(0, file.size, mime), t.id); });
@@ -268,6 +301,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       render();
       if (!currentId && tracks.length) { queue = visibleTracks().map(t => t.id); if (queue.length) await choose(queue[0], false, '음악 준비'); }
       say(added + '곡 저장 완료' + (duplicates ? ' · 중복 ' + duplicates + '곡 제외' : '') + (failed ? ' · ' + failed + '곡 저장 실패 — 공간과 파일을 확인해 주세요.' : '') + '. 곡을 눌러 재생하세요.');
+      if (duplicates) showDuplicate();
       if (added && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
     } finally { importing = false; $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled'); $('filePicker').value = ''; }
   }
@@ -394,7 +428,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       }
       for (const { t, blob } of backup.items) {
         if (t.fingerprint && seen.has(t.fingerprint)) { mappedTracks.set(t.id, seen.get(t.fingerprint)); continue; }
-        const fresh = { id: crypto.randomUUID(), name: t.name, filename: t.filename, size: blob.size, folderId: mapped.get(t.folderId), fingerprint: t.fingerprint || crypto.randomUUID(), addedAt: Number(t.addedAt) || Date.now(), duration: Number.isFinite(t.duration) ? t.duration : null, favorite:!!t.favorite, pinned:!!t.pinned };
+        const fresh = { id: crypto.randomUUID(), name: t.name, filename: t.filename, size: blob.size, folderId: mapped.get(t.folderId), fingerprint: t.fingerprint || crypto.randomUUID(), addedAt: Number(t.addedAt) || Date.now(), duration: Number.isFinite(t.duration) ? t.duration : null, favorite:!!t.favorite, pinned:!!t.pinned, contentHash:typeof t.contentHash === 'string' && /^[a-f0-9]{64}$/.test(t.contentHash) ? t.contentHash : undefined };
         newTracks.push({ t: fresh, blob }); seen.set(fresh.fingerprint,fresh.id); mappedTracks.set(t.id,fresh.id);
       }
       const mergedPlaylists = [];
@@ -452,6 +486,8 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   $('startConvert').onclick = async () => {
     if (!videoFile || converting || importing || maintenance) return;
     const file = videoFile, folderId = $('convertFolder').value, bitrate = $('bitrate').value;
+    const fingerprint = 'converted:' + file.name + ':' + file.size + ':' + file.lastModified + ':' + bitrate;
+    if (tracks.some(t=>t.fingerprint===fingerprint)) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(); return; }
     if (!file.size) { conversionDisplay('error', '비어 있는 영상이에요.'); return; }
     if (file.size >= 2147483648) { conversionDisplay('error', '이 영상은 웹 변환 엔진의 파일 크기 한도를 넘어요.'); return; }
     converting = true; const token = ++conversionToken, urls = [], controller = new AbortController();
@@ -486,8 +522,10 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       if (!output.output?.byteLength) throw new Error('추출된 음성이 없어요.');
       const blob = new Blob([output.output], { type: 'audio/mpeg' });
       const filename = file.name.replace(/\.[^.]+$/, '') + '.mp3';
-      const t = { id: crypto.randomUUID(), name: filename.replace(/\.mp3$/, ''), filename, size: blob.size, folderId, fingerprint: 'converted:' + file.name + ':' + file.size + ':' + file.lastModified + ':' + bitrate, addedAt: Date.now(), duration: null };
-      if (tracks.some(v => v.fingerprint === t.fingerprint)) throw new Error('이 영상은 같은 음질로 이미 변환해 저장했어요.');
+      const t = { id: crypto.randomUUID(), name: filename.replace(/\.mp3$/, ''), filename, size: blob.size, folderId, fingerprint, contentHash: await fileHash(blob), addedAt: Date.now(), duration: null };
+      assertActive();
+      const duplicate = await identicalTrack(blob,t.contentHash); assertActive();
+      if (duplicate) { conversionDisplay('idle','이미 변환해 저장한 곡이에요.'); showDuplicate(); return; }
       $('cancelConvert').disabled = true;
       await write(['tracks','files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(blob, t.id); });
       tracks.push(t); activeFolder = folderId; favoritesOnly = false; render(); saveState();
