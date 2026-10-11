@@ -33,6 +33,7 @@ dialog h3,.player-top,#nowPlaying .art{touch-action:none;user-select:none;-webki
 dialog[data-dragging="true"]{user-select:none;will-change:transform}
 @media(prefers-reduced-motion:reduce){dialog{transition:none!important}}
 .duplicate-toast{position:fixed;z-index:1000;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:18px 20px;border:1px solid #ffffff30;border-radius:18px;background:#303033f5;backdrop-filter:blur(20px);color:#fff;text-align:center;font-size:15px;line-height:1.6;box-shadow:0 12px 40px #0008;pointer-events:none}
+.select-link{color:var(--accent);font-size:15px;padding:0 0 0 10px}.selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:6px 0 12px}.selection-tools button{color:var(--accent);font-size:14px}.selection-tools span{color:var(--muted);font-size:13px}.selection-check{width:28px;height:28px;min-height:28px;border:1.5px solid #717176;border-radius:50%;display:grid;place-items:center;color:white;flex-shrink:0;margin-right:7px;font-size:17px}.selection-check[aria-checked=true]{background:var(--accent);border-color:var(--accent)}.row.selected{background:#ff375f09}.bulk-bar{border-radius:22px;border:1px solid #ffffff24;background:#252527ed;backdrop-filter:blur(24px);padding:12px 15px}.bulk-bar p{text-align:center;font-size:13px;color:var(--muted);margin:0 0 8px}.bulk-actions{display:flex;gap:12px;justify-content:space-between}.bulk-actions button{display:flex;gap:8px;align-items:center;justify-content:center;flex:1;color:var(--accent)}.bulk-actions .danger{color:#ff6574}.confirm-sheet .danger{color:#ff6574}.confirm-sheet p{line-height:1.7;color:var(--muted);font-size:14px}
 </style>
 </head>
 <body>
@@ -44,13 +45,14 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
 <p id="status" class="status" role="status">저장된 음악을 불러오는 중…</p>
 <div id="collections" hidden></div><div id="searchBox" class="searchbox" hidden><span id="searchIcon"></span><input id="search" type="search" placeholder="음악 이름 검색" aria-label="음악 검색"></div>
 <nav id="folders" class="folders" aria-label="음악 폴더"></nav>
-<div id="listHeader" class="library-head"><h2 id="folderTitle">전체 음악</h2><span id="count" class="count">0곡</span></div>
+<div id="listHeader" class="library-head"><h2 id="folderTitle">전체 음악</h2><span id="count" class="count">0곡</span><button id="selectMode" class="select-link">선택</button></div>
+<div id="selectionTools" class="selection-tools" hidden><button id="selectAll">전체 선택</button><span id="selectedCount">0곡 선택</span><button id="clearSelected">선택 해제</button></div>
 <div id="listToolbar" class="toolbar"><button id="playList">재생</button><button id="shuffleList">임의 재생</button><button id="collectionEdit" hidden>편집</button><select id="sort" aria-label="곡 정렬"><option value="added">추가 순</option><option value="title">제목 순</option></select></div>
 <div id="trackList"></div>
 <section id="settingsPanel" hidden><div class="setting-tools"><button id="openConvert" disabled>영상 → MP3</button><button id="backup" disabled>음악함 백업</button><label for="restorePicker">백업 복원</label><input id="restorePicker" type="file" accept=".joon" disabled></div><p class="note">음악과 폴더는 지금 사용 중인 브라우저에 저장됩니다. Safari·홈 화면 앱·ChatGPT 내부 브라우저의 음악함이 다르면 백업·복원으로 옮겨 주세요.</p>
 <details><summary>재생 테스트</summary><section class="guide"><b>연속 재생 확인</b><br>2곡 이상 추가 → 첫 곡 재생 → 화면 잠금.<br>곡이 끝나면 다음 곡으로 넘어가는지 들어보세요.<br><button id="demo" class="demo" disabled>짧은 테스트 음악 2곡 추가</button></section></details><details><summary>최근 곡 전환 기록</summary><div id="history"></div></details></section>
 <audio id="audio" preload="auto" playsinline></audio></main>
-<div class="dock"><div id="miniPlayer" class="mini" hidden><button id="miniOpen" class="mini-open" aria-label="큰 재생 화면 열기"><img src="./icons/joonmp3-icon.png" alt=""><span class="mini-info"><span id="miniTitle" class="mini-title"></span><span id="miniSubtitle" class="mini-subtitle"></span></span></button><button id="miniToggle" class="mini-control" aria-label="재생"></button><button id="miniNext" class="mini-control" aria-label="다음 곡"></button></div><nav class="tabs" aria-label="하단 메뉴"><button id="tabLibrary" aria-selected="true"></button><button id="tabPlaylists" aria-selected="false"></button><button id="tabConvert" aria-selected="false"></button><button id="tabSearch" aria-selected="false"></button></nav></div>
+<div class="dock"><div id="bulkBar" class="bulk-bar" hidden><p id="bulkCount">0곡 선택됨</p><div class="bulk-actions"><button id="bulkMove">폴더로 이동</button><button id="bulkDelete" class="danger">삭제</button></div></div><div id="miniPlayer" class="mini" hidden><button id="miniOpen" class="mini-open" aria-label="큰 재생 화면 열기"><img src="./icons/joonmp3-icon.png" alt=""><span class="mini-info"><span id="miniTitle" class="mini-title"></span><span id="miniSubtitle" class="mini-subtitle"></span></span></button><button id="miniToggle" class="mini-control" aria-label="재생"></button><button id="miniNext" class="mini-control" aria-label="다음 곡"></button></div><nav id="bottomTabs" class="tabs" aria-label="하단 메뉴"><button id="tabLibrary" aria-selected="true"></button><button id="tabPlaylists" aria-selected="false"></button><button id="tabConvert" aria-selected="false"></button><button id="tabSearch" aria-selected="false"></button></nav></div>
 <dialog id="nowPlaying"><div class="sheet-grip" aria-hidden="true"></div><div class="player-top"><button id="closePlayer" aria-label="재생 화면 닫기"></button><span>JOONmp3</span><button id="nowMore" aria-label="현재 곡 메뉴"></button></div><img class="art" draggable="false" src="./icons/joonmp3-icon.png" alt="JOONmp3"><section aria-label="현재 곡"><div id="trackTitle" class="title"></div><div class="player-sub"><div id="trackSubtitle" class="subtitle"></div><button id="nowFavorite" aria-label="즐겨찾기"></button></div><input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치" disabled><div class="times"><span id="elapsed">0:00</span><span id="remaining">−0:00</span></div></section><div class="controls"><button id="previous" aria-label="이전 곡"></button><button id="toggle" class="play" aria-label="재생"></button><button id="next" aria-label="다음 곡"></button></div><div class="options"><button id="repeat" class="repeat" aria-pressed="true">↻ 전체 반복</button><button id="showQueue" class="repeat">재생 목록</button></div><div id="queuePanel" class="queue" hidden></div></dialog>
 <dialog id="addMenu"><div class="sheet-grip" aria-hidden="true"></div><h3>음악 추가</h3><label class="add" for="filePicker">파일에서 음악 추가</label><button id="newFolder">새 폴더 만들기</button><button id="newPlaylist">새 플레이리스트 만들기</button><button id="addConvert">영상 → MP3</button><button id="closeAdd">닫기</button></dialog>
 <dialog id="songMenu"><div class="sheet-grip" aria-hidden="true"></div><h3 id="menuTitle"></h3><button id="favoriteSong" class="menu-action"></button><button id="pinSong" class="menu-action"></button><button id="addToPlaylist" class="menu-action"></button><button id="playNext" class="menu-action"></button><button id="exportSong" class="menu-action"></button><button id="removeFromPlaylist" class="menu-action danger" hidden>플레이리스트에서 제거</button><label for="moveFolder">이동할 폴더</label><select id="moveFolder"></select><button id="moveSong">폴더로 이동</button><button id="deleteSong" class="danger">음악함에서 삭제</button><button id="closeMenu">닫기</button></dialog>
@@ -66,6 +68,8 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
 <progress id="convertProgress" max="100" value="0" hidden></progress><p id="convertStatus" class="status" role="status">처음 변환할 때 인터넷으로 변환 엔진을 준비합니다. 변환 중에는 화면을 켜 두세요.</p>
 <button id="startConvert" disabled>변환하고 저장</button><button id="cancelConvert">닫기</button>
 </dialog>
+<dialog id="bulkMoveMenu"><div class="sheet-grip" aria-hidden="true"></div><h3 id="bulkMoveTitle">선택한 음악 이동</h3><label for="bulkMoveFolder">이동할 폴더</label><select id="bulkMoveFolder"></select><button id="confirmBulkMove">이동</button><button id="cancelBulkMove">취소</button></dialog>
+<dialog id="bulkDeleteMenu" class="confirm-sheet"><div class="sheet-grip" aria-hidden="true"></div><h3 id="bulkDeleteTitle"></h3><p id="bulkDeleteNote"></p><button id="removeSelectedPlaylist" class="danger">플레이리스트에서만 제거</button><button id="deleteSelectedFiles" class="danger">음악함에서 삭제</button><button id="cancelBulkDelete">취소</button></dialog>
 <script>
 'use strict';
 (() => {
@@ -75,6 +79,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   let db, tracks = [], folders = [], queue = [], activeFolder = 'all', currentId = null;
   let repeatAll = true, importing = false, selectedId = null, playGeneration = 0, lastSaved = 0;
   let restoreAt = 0, history = [], prepared = new Map(), preparing = new Map();
+  let selecting = false, selectedTracks = new Set(), pendingBulkIds = [], pendingPlaylistId = null, bulkBusy = false;
   let view = 'library', searchText = '', sortBy = 'added', favoritesOnly = false;
   let ready = false, maintenance = false, converting = false, videoFile = null, convertWorker = null, conversionToken = 0;
   const fmt = n => { n = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
@@ -92,11 +97,11 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   };
   function say(message) { $('status').textContent = message; }
   let duplicateTimer = null;
-  function showDuplicate() {
+  function showDuplicate(message = '이미 같은 곡이 플레이어에 저장되어 있습니다') {
     const toast = $('duplicateToast');
-    const sheet = ['convertMenu','songMenu','songPicker','playlistPicker','collectionMenu','addMenu','nowPlaying'].map($).find(v=>v.open);
+    const sheet = ['bulkMoveMenu','bulkDeleteMenu','convertMenu','songMenu','songPicker','playlistPicker','collectionMenu','addMenu','nowPlaying'].map($).find(v=>v.open);
     (sheet || document.body).prepend(toast);
-    toast.textContent = '이미 같은 곡이 플레이어에 저장되어 있습니다';
+    toast.textContent = message;
     toast.hidden = false;
     clearTimeout(duplicateTimer);
     duplicateTimer = setTimeout(() => { toast.hidden = true; },3000);
@@ -105,8 +110,8 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     const hash = await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());
     return Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join('');
   }
-  async function identicalTrack(blob, hash) {
-    for (const t of tracks.filter(v=>v.size===blob.size)) {
+  async function identicalTrack(blob, hash, folderId = null) {
+    for (const t of tracks.filter(v=>v.size===blob.size && (!folderId || v.folderId===folderId))) {
       let savedHash = t.contentHash;
       if (!savedHash) {
         const saved = await read('files',t.id);
@@ -207,7 +212,9 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     const favorite = document.createElement('button'); favorite.textContent = '★ 즐겨찾기'; favorite.setAttribute('aria-pressed',String(favoritesOnly)); favorite.onclick=()=>{activeFolder='all';favoritesOnly=true;render();}; $('folders').append(favorite);
     const add = document.createElement('button'); add.textContent = '＋ 폴더'; add.className = 'new'; add.disabled = !ready; add.onclick = createFolder; $('folders').append(add);
     const list = visibleTracks();
+    selectedTracks = new Set([...selectedTracks].filter(id=>list.some(t=>t.id===id)));
     renderNavigation(list);
+    renderSelection(list);
     $('folderTitle').textContent = favoritesOnly ? '즐겨찾기' : activeFolder === 'all' ? view === 'search' ? '검색 결과' : '전체 음악' : folderName(activeFolder);
     $('count').textContent = list.length + '곡 · ' + sizeLabel(list.reduce((sum, t) => sum + t.size, 0));
     $('trackList').replaceChildren();
@@ -220,8 +227,12 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       const name = document.createElement('span'); name.className = 'song-name'; name.textContent = (t.pinned ? '⌖ ' : '') + t.name + (t.favorite ? ' ★' : '');
       const detail = document.createElement('span'); detail.className = 'song-detail'; detail.textContent = folderName(t.folderId) + ' · ' + (t.duration ? fmt(t.duration) + ' · ' : '') + sizeLabel(t.size);
       info.append(name, detail); button.append(number, info);
-      button.onclick = () => startCollection(t.id);
+      button.onclick = () => selecting ? toggleSelected(t.id) : startCollection(t.id);
       const more = document.createElement('button'); more.className = 'more'; more.innerHTML = icon('more'); more.setAttribute('aria-label', t.name + ' 메뉴'); more.onclick = () => openMenu(t.id);
+      if (selecting) {
+        const check = document.createElement('button'); check.className='selection-check';check.setAttribute('role','checkbox');check.setAttribute('aria-label',t.name+' 선택');check.setAttribute('aria-checked',String(selectedTracks.has(t.id)));check.textContent=selectedTracks.has(t.id)?'✓':'';check.disabled=bulkBusy;check.onclick=()=>toggleSelected(t.id);row.append(check);
+        row.className += selectedTracks.has(t.id)?' selected':'';more.hidden=true;
+      }
       row.append(button, more); $('trackList').append(row);
     });
     const t = track(currentId);
@@ -319,8 +330,18 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   $('moveSong').onclick = async () => {
     if (maintenance) return;
     const t = track(selectedId); if (!t) return;
-    const updated = { ...t, folderId: $('moveFolder').value };
-    try { await write(['tracks'], tx => tx.objectStore('tracks').put(updated)); Object.assign(t, updated); $('songMenu').close(); render(); updateMedia(); say(folderName(t.folderId) + ' 폴더로 이동했어요.'); } catch { say('이동을 저장하지 못했어요.'); }
+    const destination = $('moveFolder').value;
+    if (!physicalFolders().some(f=>f.id===destination)) return;
+    if (t.folderId===destination) { showFolderDuplicate(destination); return; }
+    if (importing || converting) return;
+    setMaintenance(true);
+    try {
+      if (await duplicateInFolder(t,destination)) { showFolderDuplicate(destination); return; }
+      const updated = {...t,folderId:destination};
+      await write(['tracks'],tx=>tx.objectStore('tracks').put(updated));Object.assign(t,updated);$('songMenu').close();render();updateMedia();say(folderName(destination)+' 폴더로 이동했어요.');
+    } catch {say('이동을 저장하지 못했어요.');}
+    finally {setMaintenance(false);}
+
   };
   $('deleteSong').onclick = async () => {
     if (maintenance) return;
@@ -560,12 +581,13 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     previous:'<path d="m21 5-9 7 9 7Zm-9 0-9 7 9 7Z" fill="currentColor" stroke="none"/>',
     down:'<path d="m5 8 7 7 7-7"/>',
     export:'<path d="M12 15V3m-4 4 4-4 4 4M5 11v10h14V11"/>',
+    trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
     playing:'<path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 9v6"/>'
   };
   function icon(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[name] || paths.music) + '</svg>'; }
   function menuAction(id, symbol, label) { $(id).innerHTML = icon(symbol); const text = document.createElement('span'); text.textContent = label; $(id).append(text); }
   function updatePlayerUI() {
-    const t = track(currentId); $('miniPlayer').hidden = !t;
+    const t = track(currentId); $('miniPlayer').hidden = !t || selecting;
     $('miniTitle').textContent = t?.name || ''; $('miniSubtitle').textContent = t ? folderName(t.folderId) : '';
     $('miniToggle').innerHTML = icon(audio.paused ? 'play' : 'pause'); $('miniToggle').setAttribute('aria-label',audio.paused ? '재생' : '일시정지');
     $('toggle').innerHTML = icon(audio.paused ? 'play' : 'pause');
@@ -585,7 +607,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     for (const [id,page] of [['tabLibrary','library'],['tabPlaylists','playlists'],['tabSearch','search']]) $(id).setAttribute('aria-selected',String(view === page));
     if (browsing) renderCollections();
   }
-  function setView(page) { view = page; activeFolder = 'all'; favoritesOnly = false; render(); saveState(); if (page === 'search') $('search').focus(); }
+  function setView(page) { selecting=false;selectedTracks.clear(); view = page; activeFolder = 'all'; favoritesOnly = false; render(); saveState(); if (page === 'search') $('search').focus(); }
   function renderCollections() {
     $('collections').replaceChildren();
     for (const [label,kind] of [['플레이리스트','playlist'],['음악 폴더','folder']]) {
@@ -690,6 +712,91 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
   for(const [id,symbol,label] of [['addToPlaylist','playlist','플레이리스트에 추가'],['playNext','next','바로 다음에 재생'],['exportSong','export','음악 파일 내보내기']])menuAction(id,symbol,label);
   $('searchIcon').innerHTML=icon('search');
 
+  function showFolderDuplicate(id) {
+    const name = folderName(id);
+    showDuplicate('이미 같은 곡이 '+name+(name.endsWith('함')?'':'함')+'에 저장되어 있습니다');
+  }
+  async function duplicateInFolder(t, destination) {
+    if (t.folderId===destination) return true;
+    if (!tracks.some(v=>v.id!==t.id && v.folderId===destination && v.size===t.size)) return false;
+    const blob = await read('files',t.id); if(!blob) throw Error('음악 파일 없음');
+    return !!await identicalTrack(blob,t.contentHash || await fileHash(blob),destination);
+  }
+  function renderSelection(list) {
+    const shown = !($('trackList').hidden);
+    $('selectMode').hidden=!shown;$('selectMode').textContent=selecting?'완료':'선택';$('selectMode').disabled=bulkBusy||maintenance||(!selecting&&!list.length);
+    $('selectionTools').hidden=!selecting||!shown;
+    $('listToolbar').hidden=selecting||!shown;
+    $('bulkBar').hidden=!selecting||!shown;
+    $('selectedCount').textContent=selectedTracks.size+'곡 선택';$('bulkCount').textContent=selectedTracks.size+'곡 선택됨';
+    $('selectAll').disabled=bulkBusy||maintenance;$('clearSelected').disabled=bulkBusy||maintenance||!selectedTracks.size;
+    for(const id of ['bulkMove','bulkDelete'])$(id).disabled=bulkBusy||maintenance||!selectedTracks.size;
+    $('bottomTabs').hidden=selecting;
+  }
+  function toggleSelected(id) {if(bulkBusy||maintenance)return;selectedTracks.has(id)?selectedTracks.delete(id):selectedTracks.add(id);render();}
+  $('selectMode').onclick=()=>{if(maintenance||bulkBusy)return;selecting=!selecting;selectedTracks.clear();render();};
+  $('selectAll').onclick=()=>{if(bulkBusy||maintenance)return;selectedTracks=new Set(visibleTracks().map(t=>t.id));render();};
+  $('clearSelected').onclick=()=>{if(bulkBusy||maintenance)return;selectedTracks.clear();render();};
+  $('bulkMove').onclick=()=>{
+    if(maintenance||importing||converting||bulkBusy||!selectedTracks.size)return;
+    pendingBulkIds=[...selectedTracks];$('bulkMoveTitle').textContent=pendingBulkIds.length+'곡을 폴더로 이동';$('bulkMoveFolder').replaceChildren();
+    for(const f of physicalFolders()){const option=document.createElement('option');option.value=f.id;option.textContent=f.name;$('bulkMoveFolder').append(option);}
+    $('bulkMoveFolder').value=collection()?.kind!=='playlist'&&activeFolder!=='all'?activeFolder:'library';$('bulkMoveMenu').showModal();
+  };
+  $('cancelBulkMove').onclick=()=>{if(!bulkBusy)$('bulkMoveMenu').close();};
+  $('confirmBulkMove').onclick=async()=>{
+    if(bulkBusy||maintenance||importing||converting)return;
+    const destination=$('bulkMoveFolder').value;if(!physicalFolders().some(f=>f.id===destination))return;
+    const items=pendingBulkIds.map(track).filter(Boolean);if(!items.length)return;
+    bulkBusy=true;setMaintenance(true);$('confirmBulkMove').disabled=true;$('confirmBulkMove').textContent='이동 중…';$('cancelBulkMove').disabled=true;
+    try {
+      const changes=[];let duplicates=0;
+      say('선택한 곡의 중복을 확인하고 이동 중…');
+      for(const t of items){
+        if(await duplicateInFolder(t,destination)){duplicates++;continue;}
+        const blob=await read('files',t.id);if(!blob)throw Error('음악 파일 없음');
+        const hash=t.contentHash||await fileHash(blob);
+        if(changes.some(v=>v.size===t.size&&v.contentHash===hash)){duplicates++;continue;}
+        changes.push({...t,folderId:destination,contentHash:hash});
+      }
+      if(changes.length)await write(['tracks'],tx=>{for(const t of changes)tx.objectStore('tracks').put(t);});
+      for(const t of changes)Object.assign(track(t.id),t);
+      $('bulkMoveMenu').close();selectedTracks.clear();render();updateMedia();saveState();
+      say(changes.length+'곡 이동 완료'+(duplicates?' · 이미 저장된 '+duplicates+'곡 제외':''));
+      if(duplicates)showFolderDuplicate(destination);
+    }catch{say('이동을 저장하지 못했어요. 다시 시도해 주세요.');}
+    finally {bulkBusy=false;setMaintenance(false);$('confirmBulkMove').disabled=false;$('confirmBulkMove').textContent='이동';$('cancelBulkMove').disabled=false;render();}
+  };
+  $('bulkDelete').onclick=()=>{
+    if(maintenance||bulkBusy||!selectedTracks.size)return;
+    pendingBulkIds=[...selectedTracks];pendingPlaylistId=collection()?.kind==='playlist'?activeFolder:null;
+    $('bulkDeleteTitle').textContent=pendingBulkIds.length+'곡을 삭제할까요?';
+    $('bulkDeleteNote').textContent=pendingPlaylistId?'목록에서만 제거하면 음악 파일은 남습니다. 음악함에서 삭제하면 모든 플레이리스트에서도 제거되며 되돌릴 수 없습니다.':'음악함과 모든 플레이리스트에서 삭제됩니다. 되돌릴 수 없습니다. 파일 앱의 원본은 유지됩니다.';
+    $('removeSelectedPlaylist').hidden=!pendingPlaylistId;$('bulkDeleteMenu').showModal();
+  };
+  $('cancelBulkDelete').onclick=()=>{if(!bulkBusy)$('bulkDeleteMenu').close();};
+  async function completeBulkDelete(files) {
+    if(maintenance||bulkBusy||importing||converting)return;
+    const ids=new Set(pendingBulkIds.filter(id=>track(id)));if(!ids.size)return;
+    const playlist=folders.find(f=>f.id===pendingPlaylistId&&f.kind==='playlist');if(!files&&!playlist)return;
+    bulkBusy=true;setMaintenance(true);for(const id of ['deleteSelectedFiles','removeSelectedPlaylist','cancelBulkDelete'])$(id).disabled=true;
+    try {
+      const affected=files?folders.filter(f=>f.kind==='playlist'&&f.trackIds.some(id=>ids.has(id))):[playlist];
+      const changes=affected.map(f=>({...f,trackIds:f.trackIds.filter(id=>!ids.has(id))}));
+      await write(files?['tracks','files','folders']:['folders'],tx=>{for(const f of changes)tx.objectStore('folders').put(f);if(files)for(const id of ids){tx.objectStore('tracks').delete(id);tx.objectStore('files').delete(id);}});
+      for(const f of changes)Object.assign(folders.find(v=>v.id===f.id),f);
+      if(files){
+        if(ids.has(currentId)){playGeneration++;audio.pause();audio.removeAttribute('src');audio.load();currentId=null;resetProgress();}
+        tracks=tracks.filter(t=>!ids.has(t.id));queue=queue.filter(id=>!ids.has(id));
+        for(const id of ids){if(prepared.has(id)){URL.revokeObjectURL(prepared.get(id));prepared.delete(id);}}
+      }
+      $('bulkDeleteMenu').close();selectedTracks.clear();render();warmNext();saveState();updateMedia();say(ids.size+(files?'곡을 음악함에서 삭제했어요.':'곡을 플레이리스트에서만 제거했어요.'));
+    }catch{say('삭제하지 못했어요. 다시 시도해 주세요.');}
+    finally{bulkBusy=false;setMaintenance(false);for(const id of ['deleteSelectedFiles','removeSelectedPlaylist','cancelBulkDelete'])$(id).disabled=false;render();}
+  }
+  $('deleteSelectedFiles').onclick=()=>completeBulkDelete(true);$('removeSelectedPlaylist').onclick=()=>completeBulkDelete(false);
+  menuAction('bulkMove','folder','폴더로 이동');menuAction('bulkDelete','trash','삭제');
+
   // Shared dismissal gesture; controls and scrollable lists retain their own gestures.
   function enableSheetDrag(id) {
     const sheet = $(id);
@@ -699,10 +806,11 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       sheet.style.transform = ''; sheet.style.transition = ''; sheet.dataset.dragging = 'false';
     };
     sheet.addEventListener('close', reset);
+    sheet.addEventListener('cancel',event=>{if(bulkBusy)event.preventDefault();});
     sheet.addEventListener('dragstart', event => event.preventDefault());
     sheet.addEventListener('pointerdown', event => {
       if (!sheet.open || settling || event.isPrimary === false || event.button !== 0) return;
-      if (id === 'convertMenu' && converting) return;
+      if (id === 'convertMenu' && converting || bulkBusy) return;
       const target = event.target;
       if (target.closest('button,input,select,label,a')) return;
       if (!target.closest('.sheet-grip,h3,.player-top,#nowPlaying .art')) return;
@@ -742,7 +850,7 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     sheet.addEventListener('pointercancel', event => finish(event,true));
     sheet.addEventListener('lostpointercapture', event => finish(event,true));
   }
-  for (const id of ['nowPlaying','addMenu','songMenu','playlistPicker','collectionMenu','songPicker','convertMenu']) enableSheetDrag(id);
+  for (const id of ['nowPlaying','addMenu','songMenu','playlistPicker','collectionMenu','songPicker','convertMenu','bulkMoveMenu','bulkDeleteMenu']) enableSheetDrag(id);
 
   function demoFile(number) {
     const rate = 22050, seconds = 12, samples = rate * seconds;
