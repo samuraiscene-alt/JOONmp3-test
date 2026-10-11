@@ -38,6 +38,57 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
 .collection-tile{position:relative;min-width:0}.collection-card{width:100%}.collection-more{position:absolute;right:8px;top:8px;background:#0009;border:1px solid #ffffff20;width:36px;height:36px;min-height:36px}.collection-more svg{width:21px;height:21px}
 .folder-submenu{padding:12px;background:#ffffff08;border-radius:14px;margin-top:8px}.folder-submenu button{display:flex;align-items:center;gap:14px;width:100%;min-height:50px;text-align:left;border-top:1px solid #ffffff16;padding:10px 0;margin-top:10px}#folderActions::after{content:'›';margin-left:auto;font-size:24px;transform:rotate(0);transition:transform .18s}#folderActions[aria-expanded=true]::after{transform:rotate(90deg)}
 .selected-file{font-size:16px;overflow-wrap:anywhere;margin:16px 0}.conversion-result{font-size:16px;line-height:1.5;margin:16px 0}dialog label:not(.add){font-size:16px;color:#fff}dialog>button:last-child{text-align:left}.song-detail{font-variant-numeric:tabular-nums}.library-head{margin-top:20px}.folders{margin-top:20px}.selection-tools span,.bulk-bar p{font-size:15px}
+/* Larger iPhone typography shared by Safari and the installed home-screen app. */
+body{font-size:17px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+main{padding-left:18px;padding-right:18px;padding-bottom:calc(env(safe-area-inset-bottom) + 176px)}
+h1{font-size:36px;font-weight:700;letter-spacing:-1.1px;margin-bottom:18px}
+header{margin-bottom:12px}.header-actions .circle{border:1px solid #ffffff65;background:#202022e8}
+.header-actions svg{width:28px;height:28px}
+.add{font-size:18px;min-height:50px;border-radius:16px}
+.folders{gap:8px;margin-top:20px;padding-bottom:12px}
+.folders button{font-size:17px;padding:0 17px;min-height:44px;font-weight:500}
+.library-head{margin:18px 0 8px}.library-head h2,.section-title{font-size:24px;letter-spacing:-.6px}
+.select-link,.section-title button{font-size:17px}
+.toolbar{gap:8px;margin:10px 0 12px;flex-wrap:wrap}
+.toolbar button{font-size:17px;min-height:46px;border-radius:14px;font-weight:500}
+.toolbar select{font-size:15px;max-width:105px;min-height:44px}
+.row{position:relative;min-height:86px;gap:4px;border-bottom:0}
+.row::after{content:'';position:absolute;left:72px;right:0;bottom:0;height:1px;background:var(--line);pointer-events:none}
+.row:has(.selection-check)::after{left:107px}
+.song{gap:14px;padding:12px 0}
+.number{width:58px;height:58px;border-radius:9px}.number svg{width:29px;height:29px}
+.song-info{flex:1}.song-name{font-size:20px;font-weight:500;line-height:1.3;letter-spacing:-.3px}
+.song-detail{font-size:15px;line-height:1.25;margin-top:5px}
+.more{width:36px}.more svg{width:25px;height:25px}
+.collection-grid{display:flex;flex-direction:column;gap:0;margin:10px 0 24px}
+.collection-tile{min-height:76px;padding-right:40px}
+.collection-tile::after{content:'';position:absolute;left:72px;right:0;bottom:0;height:1px;background:var(--line);pointer-events:none}
+.collection-card{display:flex;align-items:center;gap:14px;min-height:76px;padding:9px 0}
+.collection-art{width:58px;height:58px;flex-shrink:0;aspect-ratio:1;border-radius:9px;margin:0}
+.collection-art svg{width:32px;height:32px}
+.collection-name{flex:1;font-size:20px;font-weight:500;letter-spacing:-.3px}
+.collection-more{right:0;top:50%;transform:translateY(-50%);width:36px;height:44px;min-height:44px;border:0;background:transparent;color:var(--muted)}
+.collection-more svg{width:25px;height:25px}
+.dock{padding:8px 18px calc(env(safe-area-inset-bottom) + 8px)}
+.mini{border-radius:30px;min-height:60px;padding:6px 9px;gap:4px;margin-bottom:7px}
+.mini-open{gap:9px;padding:0 3px}.mini img{width:42px;height:42px;border-radius:7px}
+.mini-title{font-size:18px;font-weight:600;letter-spacing:-.25px}
+.mini-control{width:40px;flex-shrink:0}.mini-control svg{width:29px;height:29px}
+.tabs{border-radius:32px;padding:4px}.tabs button{font-size:12px;min-height:58px;gap:4px;font-weight:600;white-space:nowrap}
+.tabs svg{width:28px;height:28px}.tabs button[aria-selected=true]{border-radius:28px}
+dialog{font-size:18px;padding:20px;border-radius:28px}
+dialog h3{font-size:24px;line-height:1.3;letter-spacing:-.4px}
+dialog select,dialog>button,.folder-submenu button{font-size:18px;min-height:48px}
+dialog label:not(.add){font-size:17px}
+#songMenu .menu-action{font-size:19px;min-height:56px;gap:14px;line-height:1.35}
+.menu-action svg{width:26px;height:26px}
+.settings-row,.setting-tools button,.setting-tools label{font-size:18px}
+.pick-song{font-size:18px;line-height:1.4}.searchbox input{font-size:18px}
+.selection-tools button{font-size:17px}.bulk-actions button{font-size:18px}
+.duplicate-toast{font-size:17px;line-height:1.5}
+.title{font-size:28px;line-height:1.25}.times{font-size:15px}
+.repeat,.queue button{font-size:17px}.queue h4{font-size:18px}
+@media(max-width:360px){.tabs button{font-size:11px}.toolbar{gap:6px}.toolbar button{font-size:16px}.toolbar select{max-width:94px}.mini-title{font-size:17px}}
 </style>
 </head>
 <body>
