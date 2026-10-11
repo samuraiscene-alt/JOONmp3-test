@@ -1,11 +1,11 @@
 'use strict';
-const CACHE = 'joonmp3-v2-library-20261012';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icons/joonmp3-icon.png'];
+const CACHE = 'joonmp3-v3-library-20261012';
+const FILES = ['./', './index.html', './converter-worker.js', './manifest.webmanifest', './icons/joonmp3-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE && (key.startsWith('joonmp3-bg-test-') || key.startsWith('joonmp3-v2-'))).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE && (key.startsWith('joonmp3-bg-test-') || key.startsWith('joonmp3-v2-') || key.startsWith('joonmp3-v3-'))).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);

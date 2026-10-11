@@ -25,12 +25,13 @@ input[type=range]{width:100%;accent-color:#fff;height:6px;margin:23px 0 10px}.ti
 .row{display:flex;align-items:center;border-bottom:1px solid var(--line);gap:9px;min-height:74px}.song{display:flex;align-items:center;gap:13px;flex:1;min-width:0;text-align:left;padding:12px 0}.number{font-size:14px;width:25px;text-align:center;color:var(--muted);flex-shrink:0}.song-info{min-width:0}.song-name{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.song-detail{display:block;font-size:12px;color:var(--muted);margin-top:5px}.row.current .song-name,.row.current .number{color:var(--accent)}.more{font-size:24px;color:var(--muted);width:44px;flex-shrink:0}
 .guide{background:#18181c;border-radius:17px;padding:16px;margin-top:24px;font-size:13px;line-height:1.7;color:#b7b7be}.guide b{color:#fff}.demo{color:var(--accent);padding:0;text-align:left}.note{font-size:11px;color:#777780;line-height:1.6;margin-top:16px}
 dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px;padding:22px;width:calc(100% - 44px);max-width:420px}dialog::backdrop{background:#0009}dialog h3{font-size:20px;margin:0 0 18px;overflow-wrap:anywhere}dialog select{width:100%;padding:13px;border-radius:12px;color:#fff;background:#333338;border:0}dialog button{display:block;width:100%;margin-top:10px;background:#35353b;border-radius:12px;padding:8px}.danger{color:#ff6a74}#history{font-size:12px;color:var(--muted);line-height:1.8}details{margin-top:17px}summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tools button,.tools label{background:#1c1c20;border-radius:14px;padding:12px;flex:1;text-align:center;font-size:13px;cursor:pointer}.tools label{min-height:44px}progress{width:100%;height:8px;accent-color:var(--accent);margin-top:18px}#convertMenu label:not(.add){display:block;margin:14px 0 6px;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
 <main>
 <header><h1>음악함</h1><img src="./icons/joonmp3-icon.png" alt="JOONmp3"></header>
-<div class="version">JOONmp3 · v2 연속 재생 테스트</div>
+<div class="version">JOONmp3 · v3 음악함 · 영상 변환</div>
 <img class="art" src="./icons/joonmp3-icon.png" alt="">
 <section aria-label="현재 곡"><div id="trackTitle" class="title">음악을 추가해 주세요</div><div id="trackSubtitle" class="subtitle">아이폰에 저장하고 계속 듣기</div>
 <input id="seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치" disabled>
@@ -39,16 +40,29 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
 <div class="options"><button id="repeat" class="repeat" aria-pressed="true">↻ 전체 반복</button></div>
 <label id="addLabel" class="add disabled" for="filePicker">＋ 음악 추가 · 여러 곡 선택</label>
 <input id="filePicker" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav" multiple disabled>
+<section class="tools">
+<button id="openConvert" disabled>영상 → MP3</button><button id="backup" disabled>음악함 백업</button><label for="restorePicker">백업 복원</label>
+<input id="restorePicker" type="file" accept=".joon" disabled>
+</section>
 <p id="status" class="status" role="status">저장된 음악을 불러오는 중…</p>
 <nav id="folders" class="folders" aria-label="음악 폴더"></nav>
 <div class="library-head"><h2 id="folderTitle">전체 음악</h2><span id="count" class="count">0곡</span></div>
 <div id="trackList"></div>
-<section class="guide"><b>연속 재생 확인</b><br>2곡 이상 추가 → 첫 곡 재생 → 화면 잠금.<br>곡이 끝나면 다음 곡으로 넘어가는지, 10분 이상 이어지는지 들어보세요. 전체 반복을 켜면 마지막 곡 다음에 첫 곡이 재생됩니다.<br><button id="demo" class="demo" disabled>짧은 테스트 음악 2곡 추가</button></section>
+<details><summary>재생 테스트</summary><section class="guide"><b>연속 재생 확인</b><br>2곡 이상 추가 → 첫 곡 재생 → 화면 잠금.<br>곡이 끝나면 다음 곡으로 넘어가는지, 10분 이상 이어지는지 들어보세요. 전체 반복을 켜면 마지막 곡 다음에 첫 곡이 재생됩니다.<br><button id="demo" class="demo" disabled>짧은 테스트 음악 2곡 추가</button></section></details>
 <details><summary>최근 곡 전환 기록</summary><div id="history">아직 기록이 없습니다.</div></details>
 <p class="note">음악은 이 기기의 브라우저 저장 공간에 보관됩니다. 웹사이트 데이터를 지우면 저장된 음악도 지워집니다. Safari와 홈 화면 앱의 저장 공간이 다르면 각각 추가해 주세요.</p>
 <audio id="audio" preload="auto" playsinline></audio>
 </main>
 <dialog id="songMenu"><h3 id="menuTitle"></h3><label for="moveFolder">이동할 폴더</label><select id="moveFolder"></select><button id="moveSong">폴더로 이동</button><button id="deleteSong" class="danger">음악함에서 삭제</button><button id="closeMenu">닫기</button></dialog>
+<dialog id="convertMenu"><h3>영상 → MP3</h3>
+<p class="subtitle">파일 또는 사진 보관함에서 영상을 선택하세요. 원본은 유지됩니다.</p>
+<label class="add" for="videoPicker">영상 선택</label><input id="videoPicker" type="file" accept="video/*,.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.flv,.mpg,.mpeg">
+<p id="videoName" class="subtitle">선택한 영상 없음</p>
+<label for="convertFolder">저장할 폴더</label><select id="convertFolder"></select>
+<label for="bitrate">MP3 음질</label><select id="bitrate"><option value="192">192 kbps · 기본</option><option value="128">128 kbps · 작은 파일</option><option value="320">320 kbps · 큰 파일</option></select>
+<progress id="convertProgress" max="100" value="0"></progress><p id="convertStatus" class="status" role="status">처음 변환할 때 인터넷으로 변환 엔진을 준비합니다. 변환 중에는 화면을 켜 두세요.</p>
+<button id="startConvert" disabled>변환하고 저장</button><button id="cancelConvert">닫기</button>
+</dialog>
 <script>
 'use strict';
 (() => {
@@ -58,7 +72,7 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
   let db, tracks = [], folders = [], queue = [], activeFolder = 'all', currentId = null;
   let repeatAll = true, importing = false, selectedId = null, playGeneration = 0, lastSaved = 0;
   let restoreAt = 0, history = [], prepared = new Map(), preparing = new Map();
-  let ready = false;
+  let ready = false, maintenance = false, converting = false, videoFile = null, convertWorker = null, conversionToken = 0;
   const fmt = n => { n = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
   const sizeLabel = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' KB';
   const track = id => tracks.find(t => t.id === id);
@@ -211,6 +225,7 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
     choose(queue[index > 0 ? index - 1 : repeatAll ? queue.length - 1 : 0], true, '이전 곡');
   }
   async function createFolder() {
+    if (maintenance) return;
     const raw = prompt('새 폴더 이름'); if (raw === null) return;
     const name = raw.trim().slice(0, 40); if (!name) return;
     if (folders.some(f => f.name === name)) { say('같은 이름의 폴더가 있어요.'); return; }
@@ -218,7 +233,7 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
     try { await write(['folders'], tx => tx.objectStore('folders').put(f)); folders.push(f); activeFolder = f.id; render(); saveState(); say(name + ' 폴더를 만들었어요.'); } catch { say('폴더를 저장하지 못했어요.'); }
   }
   async function addFiles(files) {
-    if (!ready || importing) return;
+    if (!ready || importing || maintenance) return;
     importing = true; $('filePicker').disabled = true; $('demo').disabled = true; $('addLabel').classList.add('disabled');
     const targetFolder = activeFolder === 'all' ? 'library' : activeFolder;
     let added = 0, duplicates = 0, failed = 0;
@@ -242,17 +257,20 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
     } finally { importing = false; $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled'); $('filePicker').value = ''; }
   }
   function openMenu(id) {
+    if (maintenance) return;
     selectedId = id; const t = track(id); if (!t) return;
     $('menuTitle').textContent = t.name; $('moveFolder').replaceChildren();
     for (const f of folders) { const option = document.createElement('option'); option.value = f.id; option.textContent = f.name; $('moveFolder').append(option); }
     $('moveFolder').value = t.folderId; $('songMenu').showModal();
   }
   $('moveSong').onclick = async () => {
+    if (maintenance) return;
     const t = track(selectedId); if (!t) return;
     const updated = { ...t, folderId: $('moveFolder').value };
     try { await write(['tracks'], tx => tx.objectStore('tracks').put(updated)); Object.assign(t, updated); $('songMenu').close(); render(); updateMedia(); say(folderName(t.folderId) + ' 폴더로 이동했어요.'); } catch { say('이동을 저장하지 못했어요.'); }
   };
   $('deleteSong').onclick = async () => {
+    if (maintenance) return;
     const t = track(selectedId); if (!t || !confirm('“' + t.name + '”을 음악함에서 삭제할까요? 원본 파일은 유지됩니다.')) return;
     try {
       await write(['tracks', 'files'], tx => { tx.objectStore('tracks').delete(t.id); tx.objectStore('files').delete(t.id); });
@@ -290,6 +308,167 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
     const handlers = { play, pause: () => audio.pause(), nexttrack: () => advance('잠금화면 다음 곡'), previoustrack: previous, seekto: data => { if (Number.isFinite(data.seekTime) && Number.isFinite(audio.duration)) audio.currentTime = Math.max(0, Math.min(data.seekTime, audio.duration)); }, seekbackward: data => { audio.currentTime = Math.max(0, audio.currentTime - (data.seekOffset || 10)); }, seekforward: data => { if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(audio.duration, audio.currentTime + (data.seekOffset || 10)); } };
     for (const [name, handler] of Object.entries(handlers)) try { navigator.mediaSession.setActionHandler(name, handler); } catch {}
   }
+
+  function setMaintenance(value) {
+    maintenance = value;
+    for (const id of ['backup', 'restorePicker', 'openConvert', 'filePicker', 'demo']) $(id).disabled = value || !ready;
+    $('addLabel').classList[value ? 'add' : 'remove']('disabled');
+  }
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  const BACKUP_MAGIC = 'JOONMP3B1\n';
+  $('backup').onclick = async () => {
+    if (!ready || importing || maintenance || converting) { say('현재 작업이 끝난 뒤 백업해 주세요.'); return; }
+    setMaintenance(true);
+    try {
+      const parts = [], metadata = [];
+      for (const t of tracks) {
+        say(metadata.length + ' / ' + tracks.length + '곡 백업 준비 중…');
+        const blob = await read('files', t.id); if (!blob) throw new Error('누락된 음악 파일이 있어요.');
+        parts.push(blob); metadata.push({ ...t, size: blob.size, mime: blob.type });
+      }
+      const header = new TextEncoder().encode(JSON.stringify({ app: 'JOONmp3', version: 1, folders, tracks: metadata }));
+      const length = new Uint8Array(4); new DataView(length.buffer).setUint32(0, header.length, true);
+      download(new Blob([BACKUP_MAGIC, length, header, ...parts], { type: 'application/octet-stream' }), 'JOONmp3-' + new Date().toISOString().slice(0,10) + '.joon');
+      say(tracks.length + '곡과 폴더의 백업 파일을 만들었어요. 파일 앱에 저장해 주세요.');
+    } catch (error) { say('백업 실패: ' + error.message); }
+    finally { setMaintenance(false); }
+  };
+  async function parseBackup(file) {
+    if (await file.slice(0, 10).text() !== BACKUP_MAGIC) throw new Error('JOONmp3 백업 파일이 아니에요.');
+    if (file.size < 14) throw new Error('백업이 손상됐어요.');
+    const headerLength = new DataView(await file.slice(10, 14).arrayBuffer()).getUint32(0, true);
+    if (!headerLength || headerLength > 16 * 1024 * 1024 || 14 + headerLength > file.size) throw new Error('백업 정보가 손상됐어요.');
+    const data = JSON.parse(await file.slice(14, 14 + headerLength).text());
+    if (data.app !== 'JOONmp3' || data.version !== 1 || !Array.isArray(data.folders) || !Array.isArray(data.tracks)) throw new Error('지원하지 않는 백업이에요.');
+    const ids = new Set(), folderIds = new Set();
+    for (const f of data.folders) {
+      if (typeof f.id !== 'string' || !f.id || folderIds.has(f.id) || typeof f.name !== 'string' || !f.name.trim() || f.name.length > 40) throw new Error('폴더 정보가 손상됐어요.');
+      folderIds.add(f.id);
+    }
+    let offset = 14 + headerLength;
+    const items = data.tracks.map(t => {
+      if (typeof t.id !== 'string' || ids.has(t.id) || typeof t.name !== 'string' || typeof t.filename !== 'string' || !folderIds.has(t.folderId) || !Number.isSafeInteger(t.size) || t.size <= 0 || offset + t.size > file.size) throw new Error('음악 정보가 손상됐어요.');
+      ids.add(t.id); const blob = file.slice(offset, offset + t.size, typeof t.mime === 'string' ? t.mime : 'audio/mpeg'); offset += t.size;
+      return { t, blob };
+    });
+    if (offset !== file.size) throw new Error('백업 파일 크기가 맞지 않아요.');
+    return { folders: data.folders, items };
+  }
+  $('restorePicker').onchange = async event => {
+    const file = event.target.files?.[0]; if (!file || !ready || importing || maintenance || converting) return;
+    setMaintenance(true);
+    try {
+      say('백업을 확인하고 있어요…'); const backup = await parseBackup(file);
+      const mapped = new Map(), newFolders = [], newTracks = [], seen = new Set(tracks.map(t => t.fingerprint).filter(Boolean));
+      for (const f of backup.folders) {
+        const existing = folders.find(v => v.name === f.name);
+        const fresh = existing || { id: crypto.randomUUID(), name: f.name, createdAt: Date.now() };
+        mapped.set(f.id, fresh.id); if (!existing) newFolders.push(fresh);
+      }
+      for (const { t, blob } of backup.items) {
+        if (t.fingerprint && seen.has(t.fingerprint)) continue;
+        const fresh = { id: crypto.randomUUID(), name: t.name, filename: t.filename, size: blob.size, folderId: mapped.get(t.folderId), fingerprint: t.fingerprint || crypto.randomUUID(), addedAt: Number(t.addedAt) || Date.now(), duration: Number.isFinite(t.duration) ? t.duration : null };
+        newTracks.push({ t: fresh, blob }); seen.add(fresh.fingerprint);
+      }
+      // One transaction: a quota error rolls back the entire restore, keeping existing music.
+      await write(['folders', 'tracks', 'files'], tx => {
+        for (const f of newFolders) tx.objectStore('folders').put(f);
+        for (const { t, blob } of newTracks) { tx.objectStore('tracks').put(t); tx.objectStore('files').put(blob, t.id); }
+      });
+      folders.push(...newFolders); tracks.push(...newTracks.map(v => v.t)); render(); saveState();
+      say(newTracks.length + '곡 복원 완료 · 기존 음악은 유지했어요. 중복 음악은 제외했어요.');
+      if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+    } catch (error) { say(error.name === 'QuotaExceededError' ? '공간이 부족해 복원하지 못했어요. 기존 음악은 유지됩니다.' : '복원 실패: ' + error.message); }
+    finally { setMaintenance(false); $('restorePicker').value = ''; }
+  };
+  $('openConvert').onclick = () => {
+    if (maintenance || importing) return;
+    $('convertFolder').replaceChildren();
+    for (const f of folders) { const option = document.createElement('option'); option.value = f.id; option.textContent = f.name; $('convertFolder').append(option); }
+    $('convertFolder').value = activeFolder === 'all' ? 'library' : activeFolder;
+    $('convertMenu').showModal();
+  };
+  $('videoPicker').onchange = event => {
+    videoFile = event.target.files?.[0] || null;
+    $('videoName').textContent = videoFile ? videoFile.name + ' · ' + sizeLabel(videoFile.size) : '선택한 영상 없음';
+    $('startConvert').disabled = !videoFile;
+  };
+  function stopConversion() {
+    conversionToken++; convertWorker?.terminate(); convertWorker = null;
+  }
+  $('cancelConvert').onclick = () => {
+    if (converting) { stopConversion(); $('convertStatus').textContent = '변환을 취소했어요. 원본은 유지됩니다.'; }
+    else $('convertMenu').close();
+  };
+  $('convertMenu').addEventListener('cancel', event => { if (converting) { event.preventDefault(); $('cancelConvert').click(); } });
+  async function engineBlob(url, type, signal) {
+    const cache = 'caches' in window ? await caches.open('joonmp3-converter-core-0.12.10') : null;
+    let response = cache ? await cache.match(url) : null;
+    if (!response) {
+      response = await fetch(url, { signal }); if (!response.ok) throw new Error('변환 엔진 다운로드 실패. 인터넷 연결을 확인해 주세요.');
+      if (cache) { try { await cache.put(url, response.clone()); } catch {} }
+    }
+    return URL.createObjectURL(new Blob([await response.arrayBuffer()], { type }));
+  }
+  $('startConvert').onclick = async () => {
+    if (!videoFile || converting || importing || maintenance) return;
+    const file = videoFile, folderId = $('convertFolder').value, bitrate = $('bitrate').value;
+    if (!file.size) { $('convertStatus').textContent = '비어 있는 영상이에요.'; return; }
+    if (file.size >= 2147483648) { $('convertStatus').textContent = '이 영상은 웹 변환 엔진의 파일 크기 한도를 넘어요.'; return; }
+    converting = true; const token = ++conversionToken, urls = [], controller = new AbortController();
+    $('startConvert').disabled = true; $('videoPicker').disabled = true; $('convertFolder').disabled = true; $('bitrate').disabled = true;
+    $('cancelConvert').textContent = '변환 취소'; $('convertProgress').value = 0;
+    let wakeLock;
+    const assertActive = () => { if (token !== conversionToken) throw new Error('취소됨'); };
+    let worker;
+    let rejectPending;
+    const request = (message, transfer = []) => new Promise((resolve, reject) => {
+      rejectPending = reject;
+      worker.onmessage = ({ data }) => {
+        if (data.type === 'progress') { $('convertProgress').value = Math.min(99, Math.max(0, data.progress * 100)); return; }
+        if (data.type === 'error') reject(new Error(data.message)); else resolve(data);
+      };
+      worker.onerror = () => reject(new Error('변환 엔진을 실행하지 못했어요. 작은 영상으로 다시 시도해 주세요.'));
+      worker.postMessage(message, transfer);
+    });
+    const cancel = () => { if (token !== conversionToken) { controller.abort(); rejectPending?.(new Error('취소됨')); } };
+    $('cancelConvert').addEventListener('click', cancel);
+    try {
+      worker = new Worker('./converter-worker.js'); convertWorker = worker;
+      if (navigator.wakeLock) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch {} }
+      $('convertStatus').textContent = '변환 엔진을 준비하고 있어요. 첫 사용은 약 31 MB를 내려받습니다…';
+      const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/';
+      urls.push(await engineBlob(base + 'ffmpeg-core.js', 'text/javascript', controller.signal)); assertActive();
+      urls.push(await engineBlob(base + 'ffmpeg-core.wasm', 'application/wasm', controller.signal)); assertActive();
+      await request({ type: 'load', coreURL: urls[0], wasmURL: urls[1] }); assertActive();
+      $('convertStatus').textContent = '음성을 MP3로 변환 중… 화면을 켜 두세요.';
+      const input = await file.arrayBuffer(); assertActive();
+      const output = await request({ type: 'convert', input, extension: file.name.split('.').pop().replace(/[^a-z0-9]/gi, '').slice(0,10) || 'video', bitrate }, [input]); assertActive();
+      if (!output.output?.byteLength) throw new Error('추출된 음성이 없어요.');
+      const blob = new Blob([output.output], { type: 'audio/mpeg' });
+      const filename = file.name.replace(/\.[^.]+$/, '') + '.mp3';
+      const t = { id: crypto.randomUUID(), name: filename.replace(/\.mp3$/, ''), filename, size: blob.size, folderId, fingerprint: 'converted:' + file.name + ':' + file.size + ':' + file.lastModified + ':' + bitrate, addedAt: Date.now(), duration: null };
+      if (tracks.some(v => v.fingerprint === t.fingerprint)) throw new Error('이 영상은 같은 음질로 이미 변환해 저장했어요.');
+      $('cancelConvert').disabled = true;
+      await write(['tracks','files'], tx => { tx.objectStore('tracks').put(t); tx.objectStore('files').put(blob, t.id); });
+      tracks.push(t); activeFolder = folderId; render(); saveState();
+      $('convertProgress').value = 100; $('convertStatus').textContent = '저장 완료 · ' + filename + ' · ' + sizeLabel(blob.size); say(folderName(folderId) + '에 MP3를 저장했어요. 곡을 눌러 재생하세요.');
+      if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+    } catch (error) {
+      $('convertStatus').textContent = token !== conversionToken ? '변환을 취소했어요. 원본은 유지됩니다.' : error.name === 'QuotaExceededError' ? '음악 저장 공간이 부족해요.' : '변환 실패: ' + error.message;
+    } finally {
+      worker?.terminate(); if (convertWorker === worker) convertWorker = null;
+      for (const url of urls) URL.revokeObjectURL(url);
+      await wakeLock?.release().catch(() => {});
+      $('cancelConvert').removeEventListener('click', cancel);
+      converting = false; $('startConvert').disabled = !videoFile; $('videoPicker').disabled = false; $('convertFolder').disabled = false; $('bitrate').disabled = false; $('cancelConvert').disabled = false; $('cancelConvert').textContent = '닫기';
+    }
+  };
+
   function demoFile(number) {
     const rate = 22050, seconds = 12, samples = rate * seconds;
     const bytes = new ArrayBuffer(44 + samples * 2), view = new DataView(bytes);
@@ -314,7 +493,7 @@ dialog{background:#222226;color:#fff;border:1px solid #44444a;border-radius:22px
       queue = Array.isArray(saved.queue) ? saved.queue.filter(id => track(id)) : [];
       if (!queue.length) queue = visibleTracks().map(t => t.id);
       history = Array.isArray(saved.history) ? saved.history.slice(-20) : [];
-      ready = true; render(); renderHistory(); $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled');
+      ready = true; $('openConvert').disabled = false; $('backup').disabled = false; $('restorePicker').disabled = false; render(); renderHistory(); $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled');
       const id = track(saved.currentId) ? saved.currentId : queue[0];
       if (id) { await choose(id, false, '저장된 곡 준비'); restoreAt = Number(saved.position) || 0; }
       say(tracks.length ? tracks.length + '곡을 불러왔어요. 곡을 눌러 재생하세요.' : '여러 MP3를 한 번에 추가하거나 테스트 음악 2곡을 담아 주세요.');
