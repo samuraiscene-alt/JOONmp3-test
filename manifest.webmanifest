@@ -1,0 +1,12 @@
+{
+  "name": "JOONmp3 백그라운드 재생 테스트",
+  "short_name": "JOONmp3 테스트",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {"src":"./icons/joonmp3-icon.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
+}
