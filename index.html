@@ -163,13 +163,18 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       try { operation(tx); } catch (error) { tx.abort(); reject(error); }
     });
   }
+  function playbackBlob(blob,t) {
+    const ext=(t?.filename || '').split('.').pop().toLowerCase();
+    const mime={mp3:'audio/mpeg',m4a:'audio/mp4',aac:'audio/aac',wav:'audio/wav',ogg:'audio/ogg',flac:'audio/flac'}[ext];
+    return mime && blob.type!==mime ? blob.slice(0,blob.size,mime) : blob;
+  }
   async function prepare(id) {
     if (!id || !track(id)) return null;
     if (prepared.has(id)) return prepared.get(id);
     if (preparing.has(id)) return preparing.get(id);
     const pending = read('files', id).then(blob => {
       if (!blob || !track(id)) throw new Error('음악 파일이 없습니다.');
-      const url = URL.createObjectURL(blob); prepared.set(id, url); return url;
+      const url = URL.createObjectURL(playbackBlob(blob,track(id))); prepared.set(id, url); return url;
     }).finally(() => preparing.delete(id));
     preparing.set(id, pending); return pending;
   }
@@ -272,7 +277,12 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
       choose(queue[0]); return;
     }
     const generation = playGeneration;
-    audio.play().catch(() => { if (generation === playGeneration) say('재생이 중단됐어요. 재생 버튼을 눌러 주세요.'); });
+    playAttemptGeneration=generation;
+    audio.play().then(() => { if(playAttemptGeneration===generation)playAttemptGeneration=-1; }).catch(error => {
+      if (generation !== playGeneration || error.name === 'AbortError') return;
+      if (audio.error || error.name === 'NotSupportedError') recoverPlayback(true);
+      else showDuplicate('재생 버튼을 다시 눌러 주세요.',[track(currentId)?.name || '']);
+    });
   }
   function advance(reason = '다음 곡') {
     const id = nextId();
@@ -385,7 +395,38 @@ dialog[data-dragging="true"]{user-select:none;will-change:transform}
     $('elapsed').textContent = fmt(audio.currentTime); $('remaining').textContent = '−' + fmt(duration - audio.currentTime);
     if (Date.now() - lastSaved > 5000) { lastSaved = Date.now(); saveState(); }
   });
-  audio.addEventListener('error', () => { if (currentId && audio.getAttribute('src')) say('이 곡을 재생하지 못했어요. 다른 MP3 파일로 시험해 주세요.'); });
+  let recoveryGeneration = -1, recoverySource = null, reportedGeneration = -1, playAttemptGeneration = -1;
+  function reportPlaybackError(generation,code) {
+    if(generation!==playGeneration || reportedGeneration===generation)return;
+    reportedGeneration=generation;audio.pause();render();updateMedia();
+    const reason=({2:'저장된 음성을 읽지 못했어요.',3:'음성 해독에 실패했어요.',4:'음성 형식을 지원하지 않거나 파일을 읽을 수 없어요.'})[code] || '재생을 시작하지 못했어요.';
+    showDuplicate(reason+' (오류 '+(code || 0)+')',[track(currentId)?.name || '']);
+  }
+  async function recoverPlayback(autoPlay = !audio.paused || playAttemptGeneration === playGeneration) {
+    const id=currentId,generation=playGeneration,source=audio.getAttribute('src'),code=audio.error?.code || 4;
+    if(!id || !source || code===1)return;
+    // Ignore events belonging to a source that is being replaced.
+    if(audio.currentSrc && audio.currentSrc!==source)return;
+    if(recoveryGeneration===generation){
+      if(recoverySource===source)reportPlaybackError(generation,code);
+      return;
+    }
+    recoveryGeneration=generation;recoverySource=null;
+    const position=audio.currentTime || 0;
+    try {
+      const blob=await read('files',id);
+      if(generation!==playGeneration || currentId!==id)return;
+      if(!blob?.size)throw Error('missing');
+      const fresh=URL.createObjectURL(playbackBlob(blob,track(id)));
+      prepared.set(id,fresh);recoverySource=fresh;restoreAt=position;
+      audio.src=fresh;audio.load();URL.revokeObjectURL(source);
+      if(autoPlay)play();else {render();updateMedia();}
+    } catch {
+      if(generation!==playGeneration)return;
+      reportPlaybackError(generation,2);
+    }
+  }
+  audio.addEventListener('error', () => { if(audio.error)recoverPlayback(); });
   if ('mediaSession' in navigator) {
     const handlers = { play, pause: () => audio.pause(), nexttrack: () => advance('잠금화면 다음 곡'), previoustrack: previous, seekto: data => { if (Number.isFinite(data.seekTime) && Number.isFinite(audio.duration)) audio.currentTime = Math.max(0, Math.min(data.seekTime, audio.duration)); }, seekbackward: data => { audio.currentTime = Math.max(0, audio.currentTime - (data.seekOffset || 10)); }, seekforward: data => { if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(audio.duration, audio.currentTime + (data.seekOffset || 10)); } };
     for (const [name, handler] of Object.entries(handlers)) try { navigator.mediaSession.setActionHandler(name, handler); } catch {}
