@@ -183,7 +183,7 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
       const name = document.createElement('span'); name.className = 'song-name'; name.textContent = (t.pinned ? '⌖ ' : '') + t.name + (t.favorite ? ' ★' : '');
       const detail = document.createElement('span'); detail.className = 'song-detail'; detail.textContent = folderName(t.folderId) + ' · ' + (t.duration ? fmt(t.duration) + ' · ' : '') + sizeLabel(t.size);
       info.append(name, detail); button.append(number, info);
-      button.onclick = () => { queue = visibleTracks().map(item => item.id); choose(t.id, true, '곡 선택'); };
+      button.onclick = () => startCollection(t.id);
       const more = document.createElement('button'); more.className = 'more'; more.innerHTML = icon('more'); more.setAttribute('aria-label', t.name + ' 메뉴'); more.onclick = () => openMenu(t.id);
       row.append(button, more); $('trackList').append(row);
     });
@@ -203,6 +203,8 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
     return true;
   }
   async function choose(id, autoPlay = true, reason = '곡 선택') {
+    // Cached tracks must start within the tap/ended handler without awaiting storage.
+    if (prepared.has(id)) { loadPrepared(id, reason, autoPlay); return; }
     const generation = ++playGeneration;
     try {
       await prepare(id);
@@ -619,8 +621,24 @@ dialog{background:#202022;color:#fff;border:1px solid #ffffff24;border-radius:26
   $('collectionBack').onclick=()=>setView('playlists');
   $('tabLibrary').onclick=()=>setView('library');$('tabPlaylists').onclick=()=>setView('playlists');$('tabSearch').onclick=()=>setView('search');$('tabConvert').onclick=()=>$('openConvert').click();
   $('search').oninput=()=>{searchText=$('search').value;render();};$('sort').onchange=()=>{sortBy=$('sort').value;render();saveState();};
-  $('playList').onclick=()=>{queue=visibleTracks().map(t=>t.id);if(queue.length)choose(queue[0],true,'목록 재생');};
-  $('shuffleList').onclick=()=>{queue=visibleTracks().map(t=>t.id);for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}if(queue.length)choose(queue[0],true,'임의 재생');};
+  function startCollection(selected = null) {
+    const ids = visibleTracks().map(t => t.id);
+    if (!ids.length) { say('이 목록에 음악을 추가해 주세요.'); return; }
+    if (selected && ids.includes(selected)) {
+      const index = ids.indexOf(selected);
+      // Put every song after the selected start, including earlier list entries.
+      queue = ids.slice(index).concat(ids.slice(0, index));
+    } else {
+      queue = ids.slice();
+      for (let i = queue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [queue[i], queue[j]] = [queue[j], queue[i]];
+      }
+    }
+    choose(queue[0], true, selected ? '곡 선택 → 전체 연속 재생' : '무작위 시작 → 전체 연속 재생');
+  }
+  $('playList').onclick = () => startCollection();
+  $('shuffleList').onclick = () => startCollection();
   $('miniOpen').onclick=()=>$('nowPlaying').showModal();$('closePlayer').onclick=()=>$('nowPlaying').close();$('miniToggle').onclick=()=>$('toggle').click();$('miniNext').onclick=()=>$('next').click();
   $('nowMore').onclick=()=>{if(currentId){$('nowPlaying').close();openMenu(currentId);}};$('showQueue').onclick=()=>{$('queuePanel').hidden=!$('queuePanel').hidden;renderQueue();};
   for(const [id,symbol] of [['headerAdd','plus'],['headerSettings','more'],['previous','previous'],['next','next'],['miniNext','next'],['closePlayer','down'],['nowMore','more']])$(id).innerHTML=icon(symbol);
