@@ -1,6 +1,6 @@
 {
-  "name": "JOONmp3 백그라운드 재생 테스트",
-  "short_name": "JOONmp3 테스트",
+  "name": "JOONmp3 Music Player",
+  "short_name": "JOONmp3",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
