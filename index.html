@@ -47,7 +47,7 @@ header{margin-bottom:12px}.header-actions .circle{border:1px solid #ffffff65;bac
 .header-actions svg{width:28px;height:28px}
 .add{font-size:18px;min-height:50px;border-radius:16px}
 .folders{gap:8px;margin-top:20px;padding-bottom:12px}
-.folders button{font-size:17px;padding:0 17px;min-height:44px;font-weight:500}
+.folders button.recorder-tab{background:var(--accent);color:#fff}.folders button{font-size:17px;padding:0 17px;min-height:44px;font-weight:500}
 .library-head{margin:18px 0 8px}.library-head h2,.section-title{font-size:24px;letter-spacing:-.6px}
 .select-link,.section-title button{font-size:17px}
 .toolbar{gap:8px;margin:10px 0 12px;flex-wrap:wrap}
@@ -99,7 +99,7 @@ dialog label:not(.add){font-size:17px}
 <header><div class="brand"><img src="./icons/joonmp3-icon.png" alt="JOONmp3"></div><div class="header-actions"><button id="headerAdd" class="circle" aria-label="새 항목 추가"></button><button id="headerSettings" class="circle" aria-label="설정"></button></div></header>
 <button id="collectionBack" hidden style="color:var(--accent);padding:0;text-align:left">‹ 플레이리스트와 폴더</button><h1 id="pageTitle">보관함</h1>
 <label id="addLabel" class="add disabled" for="filePicker">＋ 음악 추가</label><input id="filePicker" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg" multiple disabled>
-<button id="addRecording" class="add" disabled style="width:100%;margin-top:10px">＋ 녹음 추가</button><section id="recordingsPanel" hidden></section>
+<section id="recordingsPanel" hidden></section>
 <p id="status" class="status" role="status" hidden>저장된 음악을 불러오는 중…</p>
 <div id="collections" hidden></div><div id="searchBox" class="searchbox" hidden><span id="searchIcon"></span><input id="search" type="search" placeholder="음악 이름 검색" aria-label="음악 검색"></div>
 <nav id="folders" class="folders" aria-label="음악 폴더"></nav>
@@ -141,6 +141,7 @@ dialog label:not(.add){font-size:17px}
   let restoreAt = 0, history = [], prepared = new Map(), preparing = new Map();
   let selecting = false, selectedTracks = new Set(), pendingBulkIds = [], pendingPlaylistId = null, bulkBusy = false;
   let collectionMenuId = null, recorderUI = null;
+  let resumeBlocked = false, interruptionGeneration = 0;
   let view = 'library', searchText = '', sortBy = 'added', favoritesOnly = false;
   let ready = false, maintenance = false, converting = false, videoFile = null, convertWorker = null, conversionToken = 0;
   const fmt = n => { n = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
@@ -298,10 +299,11 @@ dialog label:not(.add){font-size:17px}
   }
   function render() {
     $('folders').replaceChildren();
-    for (const f of [{ id: 'all', name: '전체' }, ...physicalFolders()]) {
+    for (const f of [{ id: 'all', name: '전체' }, {id:'recorder',name:'녹음기'}, ...physicalFolders()]) {
       const button = document.createElement('button'); button.textContent = f.name;
+      if(f.id==='recorder'){button.id='addRecording';button.className='recorder-tab';button.disabled=!ready||maintenance;}
       button.setAttribute('aria-pressed', String(f.id === activeFolder));
-      button.onclick = () => { activeFolder = f.id; favoritesOnly = false; render(); saveState(); };
+      button.onclick = () => {if(f.id==='recorder'){if(ready&&!maintenance)setView('recordings');return;} activeFolder = f.id; favoritesOnly = false; render(); saveState(); };
       $('folders').append(button);
     }
     const favorite = document.createElement('button'); favorite.textContent = '★ 즐겨찾기'; favorite.setAttribute('aria-pressed',String(favoritesOnly)); favorite.onclick=()=>{activeFolder='all';favoritesOnly=true;render();}; $('folders').append(favorite);
@@ -356,6 +358,7 @@ dialog label:not(.add){font-size:17px}
     } catch { if (generation === playGeneration) say('파일을 불러오지 못했어요. 곡을 다시 추가해 주세요.'); }
   }
   function play() {
+    resumeBlocked=false;
     if (!currentId) {
       queue = visibleTracks().map(t => t.id);
       if (!queue.length) { say('먼저 음악을 추가해 주세요.'); return; }
@@ -465,9 +468,9 @@ dialog label:not(.add){font-size:17px}
   $('next').onclick = () => { if (!currentId) play(); else advance(); };
   $('repeat').onclick = () => { repeatAll = !repeatAll; render(); warmNext(); saveState(); };
   $('seek').oninput = () => { if (Number.isFinite(audio.duration)) { audio.currentTime = Number($('seek').value) / 1000 * audio.duration; updateMedia(); saveState(); } };
-  audio.addEventListener('play', () => { recorderUI?.pause(); $('toggle').innerHTML = icon('pause'); $('toggle').setAttribute('aria-label', '일시정지'); say('재생 중 · ' + (track(currentId)?.name || '')); render(); updateMedia(); });
-  audio.addEventListener('pause', () => { if (currentId) say('일시정지 · ' + (track(currentId)?.name || '')); $('toggle').innerHTML = icon('play'); $('toggle').setAttribute('aria-label', '재생'); render(); updateMedia(); saveState(); });
-  audio.addEventListener('ended', () => advance('곡 종료 → 자동 재생'));
+  audio.addEventListener('play', () => {if(resumeBlocked){audio.pause();return;} recorderUI?.pause(); $('toggle').innerHTML = icon('pause'); $('toggle').setAttribute('aria-label', '일시정지'); say('재생 중 · ' + (track(currentId)?.name || '')); render(); updateMedia(); });
+  audio.addEventListener('pause', () => {if(audio.paused&&!audio.ended){resumeBlocked=true;interruptionGeneration++;} if (currentId) say('일시정지 · ' + (track(currentId)?.name || '')); $('toggle').innerHTML = icon('play'); $('toggle').setAttribute('aria-label', '재생'); render(); updateMedia(); saveState(); });
+  audio.addEventListener('ended', () => {if(!resumeBlocked)advance('곡 종료 → 자동 재생');});
   audio.addEventListener('loadedmetadata', () => {
     $('seek').disabled = !Number.isFinite(audio.duration);
     if (restoreAt && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(restoreAt, Math.max(0, audio.duration - .1)); restoreAt = 0; }
@@ -498,15 +501,16 @@ dialog label:not(.add){font-size:17px}
       return;
     }
     recoveryGeneration=generation;recoverySource=null;
-    const position=audio.currentTime || 0;
+    const position=audio.currentTime || 0,interruption=interruptionGeneration;
     try {
       const blob=await readAudioFile(id);
       if(generation!==playGeneration || currentId!==id)return;
       if(!blob?.size)throw Error('missing');
       const fresh=URL.createObjectURL(playbackBlob(blob,track(id)));
       prepared.set(id,fresh);recoverySource=fresh;restoreAt=position;
+      const retryAllowed=autoPlay&&!resumeBlocked&&interruption===interruptionGeneration;
       audio.src=fresh;audio.load();URL.revokeObjectURL(source);
-      if(autoPlay)play();else {render();updateMedia();}
+      if(retryAllowed)play();else {render();updateMedia();}
     } catch {
       if(generation!==playGeneration)return;
       reportPlaybackError(generation,2);
@@ -738,7 +742,7 @@ dialog label:not(.add){font-size:17px}
   }
   function renderNavigation(list) {
     const browsing = view === 'playlists' && activeFolder === 'all', recordingView=view==='recordings';
-    $('recordingsPanel').hidden=!recordingView;$('addRecording').hidden=recordingView||view==='settings';$('addRecording').disabled=!ready||maintenance;document.body.classList.toggle('recording-view',recordingView);if(recordingView)recorderUI?.refresh();
+    $('recordingsPanel').hidden=!recordingView;document.body.classList.toggle('recording-view',recordingView);if(recordingView)recorderUI?.refresh();
     $('pageTitle').textContent = recordingView ? '음성 메모' : view === 'settings' ? '설정' : view === 'search' ? '검색' : view === 'playlists' ? collection()?.name || '플레이리스트' : '보관함';
     $('collectionBack').hidden = view !== 'playlists' || activeFolder === 'all';
     $('collections').hidden = !browsing; $('settingsPanel').hidden = view !== 'settings';
@@ -1016,6 +1020,9 @@ dialog label:not(.add){font-size:17px}
   $('demo').onclick = () => addFiles([demoFile(1), demoFile(2)]);
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); });
   window.addEventListener('pagehide', saveState);
+  const keepInterruptedPlaybackPaused=()=>{if(!document.hidden&&resumeBlocked&&!audio.paused)audio.pause();};
+  document.addEventListener('visibilitychange',keepInterruptedPlaybackPaused);
+  window.addEventListener('pageshow',keepInterruptedPlaybackPaused);
   async function boot() {
     try {
       db = await openDB();
@@ -1051,7 +1058,6 @@ dialog label:not(.add){font-size:17px}
       render();saveState();updateMedia();
     },hash:fileHash
   });
-  $('addRecording').onclick=()=>{if(ready&&!maintenance)setView('recordings');};
   boot();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(() => {});
