@@ -299,7 +299,7 @@ dialog label:not(.add){font-size:17px}
   }
   function render() {
     $('folders').replaceChildren();
-    for (const f of [{ id: 'all', name: '전체' }, {id:'recorder',name:'녹음기'}, ...physicalFolders()]) {
+    for (const f of [{ id: 'all', name: '전체' }, {id:'recorder',name:'녹음기'}, ...physicalFolders().sort((a,b)=>Number(b.id==='library')-Number(a.id==='library'))]) {
       const button = document.createElement('button'); button.textContent = f.name;
       if(f.id==='recorder'){button.id='addRecording';button.className='recorder-tab';button.disabled=!ready||maintenance;}
       button.setAttribute('aria-pressed', String(f.id === activeFolder));
