@@ -91,6 +91,8 @@ dialog label:not(.add){font-size:17px}
 .repeat,.queue button{font-size:17px}.queue h4{font-size:18px}
 @media(max-width:360px){.tabs button{font-size:11px}.toolbar{gap:6px}.toolbar button{font-size:16px}.toolbar select{max-width:94px}.mini-title{font-size:17px}}
 .search-match{color:#fff;font-weight:800}.search-rest{color:#77777e;font-weight:400}.recording-view .dock{display:none}
+
+.import-complete{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;pointer-events:none}.import-complete>div{width:124px;height:124px;border-radius:28px;background:rgba(28,28,30,.94);display:grid;place-items:center;box-shadow:0 8px 36px #0006;animation:complete-pop .18s ease-out}.import-complete svg{width:82px;height:82px;color:#08b628}@keyframes complete-pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -128,6 +130,7 @@ dialog label:not(.add){font-size:17px}
 </dialog>
 <dialog id="bulkMoveMenu"><div class="sheet-grip" aria-hidden="true"></div><h3 id="bulkMoveTitle">선택한 음악 이동</h3><label for="bulkMoveFolder">이동할 폴더</label><select id="bulkMoveFolder"></select><button id="confirmBulkMove">이동</button><button id="cancelBulkMove">취소</button></dialog>
 <dialog id="bulkDeleteMenu" class="confirm-sheet"><div class="sheet-grip" aria-hidden="true"></div><h3 id="bulkDeleteTitle"></h3><p id="bulkDeleteNote" hidden></p><button id="removeSelectedPlaylist" class="danger">플레이리스트에서만 제거</button><button id="deleteSelectedFiles" class="danger">음악함에서 삭제</button><button id="cancelBulkDelete">취소</button></dialog>
+<div id="importComplete" class="import-complete" role="status" aria-label="음악 추가 완료" hidden><div><svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M90 48a40 40 0 1 1-40-38" stroke="currentColor" stroke-width="10" stroke-linecap="round"/><path d="m30 45 18 19 40-45" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
 <script src="./audio-tools.js"></script>
 <script src="./recorder.js"></script>
 <script>
@@ -200,6 +203,8 @@ dialog label:not(.add){font-size:17px}
     return null;
   }
 
+  let importCompleteTimer=null;
+  function showImportComplete(){clearTimeout(importCompleteTimer);$('importComplete').hidden=false;importCompleteTimer=setTimeout(()=>{$('importComplete').hidden=true;},2000);}
   function saveState() {
     try { localStorage.setItem(STATE_KEY, JSON.stringify({ currentId, position: audio.currentTime || 0, repeatAll, activeFolder, queue, history, view, sortBy })); } catch {}
   }
@@ -303,7 +308,7 @@ dialog label:not(.add){font-size:17px}
       const button = document.createElement('button'); button.textContent = f.name;
       if(f.id==='recorder'){button.id='addRecording';button.className='recorder-tab';button.disabled=!ready||maintenance;}
       button.setAttribute('aria-pressed', String(f.id === activeFolder));
-      button.onclick = () => {if(f.id==='recorder'){if(ready&&!maintenance)setView('recordings');return;} activeFolder = f.id; favoritesOnly = false; render(); saveState(); };
+      button.onclick = () => {if(f.id==='recorder'){if(ready&&!maintenance)setView('recordings');return;} selecting=false;selectedTracks.clear();activeFolder = f.id; favoritesOnly = false; render(); saveState(); };
       $('folders').append(button);
     }
     const favorite = document.createElement('button'); favorite.textContent = '★ 즐겨찾기'; favorite.setAttribute('aria-pressed',String(favoritesOnly)); favorite.onclick=()=>{activeFolder='all';favoritesOnly=true;render();}; $('folders').append(favorite);
@@ -394,6 +399,7 @@ dialog label:not(.add){font-size:17px}
   }
   async function addFiles(files) {
     if (!ready || importing || maintenance || converting) return;
+    clearTimeout(importCompleteTimer);$('importComplete').hidden=true;
     importing = true; $('filePicker').disabled = true; $('demo').disabled = true; $('addLabel').classList.add('disabled');
     const targetFolder = collection()?.kind !== 'playlist' && activeFolder !== 'all' ? activeFolder : 'library';
     let added = 0, duplicates = 0, failed = 0; const duplicateNames = [];
@@ -416,6 +422,7 @@ dialog label:not(.add){font-size:17px}
       render();
       if (!currentId && tracks.length) { queue = visibleTracks().map(t => t.id); if (queue.length) await choose(queue[0], false, '음악 준비'); }
       say(added + '곡 저장 완료' + (duplicates ? ' · 중복 ' + duplicates + '곡 제외' : '') + (failed ? ' · ' + failed + '곡 저장 실패 — 공간과 파일을 확인해 주세요.' : '') + '. 곡을 눌러 재생하세요.');
+      if(added&&!failed&&!duplicates)showImportComplete();
       if (duplicates) showDuplicate(undefined,duplicateNames);
       if (added && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
     } finally { importing = false; $('filePicker').disabled = false; $('demo').disabled = false; $('addLabel').classList.remove('disabled'); $('filePicker').value = ''; }
@@ -916,7 +923,7 @@ dialog label:not(.add){font-size:17px}
       }
       if(changes.length)await write(['tracks'],tx=>{for(const t of changes)tx.objectStore('tracks').put(t);});
       for(const t of changes)Object.assign(track(t.id),t);
-      $('bulkMoveMenu').close();selectedTracks.clear();render();updateMedia();saveState();
+      $('bulkMoveMenu').close();selecting=false;selectedTracks.clear();render();updateMedia();saveState();
       say(changes.length+'곡 이동 완료'+(duplicates?' · 이미 저장된 '+duplicates+'곡 제외':''));
       if(duplicates)showFolderDuplicate(destination,duplicateNames);
     }catch{say('이동을 저장하지 못했어요. 다시 시도해 주세요.');}
@@ -933,7 +940,7 @@ dialog label:not(.add){font-size:17px}
   async function completeBulkDelete(files) {
     if(maintenance||bulkBusy||importing||converting)return;
     const ids=new Set(pendingBulkIds.filter(id=>track(id)));if(!ids.size)return;
-    if(files){const recIds=[...ids].filter(id=>track(id)?.isRecording);if(recIds.length){await recorderUI.removeFromMusic(recIds);for(const id of recIds)ids.delete(id);if(!ids.size){$('bulkDeleteMenu').close();selectedTracks.clear();render();return;}}}
+    if(files){const recIds=[...ids].filter(id=>track(id)?.isRecording);if(recIds.length){await recorderUI.removeFromMusic(recIds);for(const id of recIds)ids.delete(id);if(!ids.size){$('bulkDeleteMenu').close();selecting=false;selectedTracks.clear();render();return;}}}
     const playlist=folders.find(f=>f.id===pendingPlaylistId&&f.kind==='playlist');if(!files&&!playlist)return;
     bulkBusy=true;setMaintenance(true);for(const id of ['deleteSelectedFiles','removeSelectedPlaylist','cancelBulkDelete'])$(id).disabled=true;
     try {
@@ -946,7 +953,7 @@ dialog label:not(.add){font-size:17px}
         tracks=tracks.filter(t=>!ids.has(t.id));queue=queue.filter(id=>!ids.has(id));
         for(const id of ids){if(prepared.has(id)){URL.revokeObjectURL(prepared.get(id));prepared.delete(id);}}
       }
-      $('bulkDeleteMenu').close();selectedTracks.clear();render();warmNext();saveState();updateMedia();say(ids.size+(files?'곡을 음악함에서 삭제했어요.':'곡을 플레이리스트에서만 제거했어요.'));
+      $('bulkDeleteMenu').close();selecting=false;selectedTracks.clear();render();warmNext();saveState();updateMedia();say(ids.size+(files?'곡을 음악함에서 삭제했어요.':'곡을 플레이리스트에서만 제거했어요.'));
     }catch{say('삭제하지 못했어요. 다시 시도해 주세요.');}
     finally{bulkBusy=false;setMaintenance(false);for(const id of ['deleteSelectedFiles','removeSelectedPlaylist','cancelBulkDelete'])$(id).disabled=false;render();}
   }
