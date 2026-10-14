@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'joonmp3-v4-library-20261012-19';
+const CACHE = 'joonmp3-v4-library-20261014-20';
 const FILES = ['./', './index.html', './recorder.js', './recorder.css', './audio-tools.js', './converter-worker.js', './manifest.webmanifest', './icons/joonmp3-icon.png', './icons/joonmp3-home-v412.png', './apple-touch-icon-v413.png', './apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
