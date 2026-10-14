@@ -94,6 +94,12 @@ dialog label:not(.add){font-size:17px}
 
 .import-complete{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;pointer-events:none}.import-complete>div{width:124px;height:124px;border-radius:28px;background:rgba(28,28,30,.94);display:grid;place-items:center;box-shadow:0 8px 36px #0006;animation:complete-pop .18s ease-out}.import-complete svg{width:82px;height:82px;color:#08b628}@keyframes complete-pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 </style>
+<style>
+#musicEditPicker,#musicEditor{width:100%;max-width:560px;height:100dvh;max-height:100dvh;margin:auto;border:0;border-radius:0;background:#000;padding:calc(env(safe-area-inset-top) + 20px) 22px calc(env(safe-area-inset-bottom) + 24px)}
+.folders button.trim-tab{color:#58b9ff}
+#musicEditPicker h3,#musicEditor h3{font-size:32px;letter-spacing:-.7px;margin:10px 0 18px}.edit-picker-tools{position:sticky;top:0;background:#000;padding:8px 0;z-index:1}.edit-picker-tools input{width:100%;border:0;border-radius:14px;background:#242426;color:white;padding:14px 16px;font-size:18px}.edit-track{display:flex;align-items:center;gap:14px;width:100%;min-height:78px;text-align:left;border-bottom:1px solid #303033;padding:12px 0}.edit-track svg{color:#ff7794;width:29px;height:29px}.edit-track span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:20px}
+.edit-toolbar{display:flex;justify-content:space-between;align-items:center}.edit-toolbar button{border-radius:22px;background:#202022;border:1px solid #777;padding:0 20px;font-size:18px}.edit-toolbar #musicEditSave{background:#ffe141;border-color:#ffe141;color:#000;font-weight:700}.edit-subtitle{font-size:23px;font-weight:700;margin:22px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.edit-timeline{position:relative;height:176px;background:#123f36;border-radius:10px;overflow:hidden;touch-action:none}.edit-timeline canvas,.edit-volume canvas{display:block;width:100%;height:100%}.edit-range{position:absolute;top:0;height:100%;border:3px solid #58b9ff;border-radius:6px;pointer-events:none}.edit-dim{position:absolute;inset:0;background:#0008;pointer-events:none}.edit-trim-handle{position:absolute;top:0;height:100%;width:28px;min-height:44px;transform:translateX(-50%);background:#58b9ff;color:#001b2d;border-radius:6px;font-size:27px;touch-action:none;padding:0}.edit-times{display:flex;justify-content:space-between;color:#aaa;font-size:17px;font-variant-numeric:tabular-nums;margin:7px 0 20px}.edit-volume{position:relative;height:128px;background:#183c30;border-radius:10px;overflow:hidden;touch-action:none}.edit-volume-hint{color:#929298;font-size:15px;margin:9px 0 16px}.edit-controls{display:flex;justify-content:center;gap:18px;margin:20px 0}.edit-controls button{border-radius:24px;background:#222;padding:0 20px;font-size:18px}.edit-state{min-height:22px;text-align:center;color:#58b9ff;font-size:16px;margin:8px 0}
+</style>
 </head>
 <body>
 <div id="duplicateToast" class="duplicate-toast" role="status" aria-live="polite" hidden></div>
@@ -118,6 +124,8 @@ dialog label:not(.add){font-size:17px}
 <dialog id="playlistPicker"><div class="sheet-grip" aria-hidden="true"></div><h3>플레이리스트에 추가</h3><div id="playlistChoices"></div><button id="pickerNewPlaylist">새 플레이리스트 만들기</button></dialog>
 <dialog id="collectionMenu"><div class="sheet-grip" aria-hidden="true"></div><h3 id="collectionMenuTitle"></h3><button id="editCollectionSongs">음악 선택</button><button id="renameCollection">이름 변경</button><button id="deleteCollection" class="danger">삭제</button></dialog>
 <dialog id="songPicker"><div class="sheet-grip" aria-hidden="true"></div><h3>플레이리스트 음악 선택</h3><div id="songChoices"></div><button id="saveSongChoices">완료</button><button id="closeSongPicker">취소</button></dialog>
+<dialog id="musicEditPicker"><div class="sheet-grip"></div><div class="edit-toolbar"><button id="musicEditPickerClose">취소</button><span></span><button id="musicEditPickerSearch" aria-label="곡 검색">⌕</button></div><h3>자르기</h3><div class="edit-picker-tools"><input id="musicEditSearch" type="search" placeholder="편집할 곡 찾기" aria-label="편집할 곡 찾기"></div><div id="musicEditChoices"></div></dialog>
+<dialog id="musicEditor"><div class="sheet-grip"></div><div class="edit-toolbar"><button id="musicEditCancel">취소</button><span></span><button id="musicEditSave">완료</button></div><div id="musicEditTitle" class="edit-subtitle"></div><div class="edit-timeline" id="musicEditTimeline"><canvas id="musicEditWave" aria-label="음악 자르기 파형"></canvas><div id="musicEditDim" class="edit-dim"></div><div id="musicEditRange" class="edit-range"></div><button id="musicEditLeft" class="edit-trim-handle" aria-label="자르기 시작">‹</button><button id="musicEditRight" class="edit-trim-handle" aria-label="자르기 끝">›</button></div><div class="edit-times"><span id="musicEditStartLabel">0:00</span><span id="musicEditEndLabel">0:00</span></div><div class="edit-volume" id="musicVolume"><canvas id="musicVolumeCanvas" aria-label="구간별 음량 조절"></canvas></div><p class="edit-volume-hint">눌러 점을 만들고, 점 사이 선을 아래로 끌어 음량을 낮추세요.</p><div id="musicEditState" class="edit-state" role="status"></div><div class="edit-controls"><button id="musicEditPreview">▶ 미리 듣기</button></div><progress id="musicEditProgress" max="100" value="0" hidden></progress></dialog>
 <dialog id="convertMenu"><div class="sheet-grip" aria-hidden="true"></div><h3>음성 추출</h3>
 
 <label class="add" for="videoPicker">영상 선택</label><input id="videoPicker" type="file" accept="video/*,.mp4,.mov,.m4v,.mkv,.avi,.webm,.wmv,.flv,.mpg,.mpeg">
@@ -147,6 +155,7 @@ dialog label:not(.add){font-size:17px}
   let resumeBlocked = false, interruptionGeneration = 0;
   let view = 'library', searchText = '', sortBy = 'added', favoritesOnly = false;
   let ready = false, maintenance = false, converting = false, videoFile = null, convertWorker = null, conversionToken = 0;
+  let editTrackId=null, editBuffer=null, editBlob=null, editContext=null, editStart=0, editEnd=0, editPoints=[], editSource=null, editBusy=false, editCancel=null;
   const fmt = n => { n = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0; return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
   const sizeLabel = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' KB';
   const track = id => tracks.find(t => t.id === id);
@@ -170,7 +179,14 @@ dialog label:not(.add){font-size:17px}
     list = list.filter(t => !t.recordingDeletedAt && (!t.isRecording || t.inMusic));
     if (favoritesOnly && view !== 'search') list = list.filter(t => t.favorite);
     if (view === 'search') list = list.filter(t => searchKey(t.name).includes(searchKey(searchText)) || searchKey(t.filename).includes(searchKey(searchText)));
-    return list.slice().sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || (sortBy === 'title' ? a.name.localeCompare(b.name,'ko') : f?.kind === 'playlist' ? 0 : a.addedAt - b.addedAt));
+    list=list.slice().sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || (sortBy === 'title' ? a.name.localeCompare(b.name,'ko') : f?.kind === 'playlist' ? 0 : a.addedAt - b.addedAt));
+    if(f?.kind!=='playlist'&&view!=='search'){
+      const visible=new Set(list.map(t=>t.id)),children=new Map();
+      for(const t of list)if(t.sourceTrackId&&visible.has(t.sourceTrackId)){const bucket=children.get(t.sourceTrackId)||[];bucket.push(t);children.set(t.sourceTrackId,bucket);}
+      const grouped=[],seen=new Set();const append=t=>{if(seen.has(t.id))return;seen.add(t.id);grouped.push(t);for(const child of children.get(t.id)||[])append(child);};
+      for(const t of list)if(!t.sourceTrackId||!visible.has(t.sourceTrackId))append(t);for(const t of list)append(t);list=grouped;
+    }
+    return list;
   };
   function say(message) { $('status').textContent = message; if (/실패|못했|부족|손상|같은 이름|저장 공간을 열지|다른 JOONmp3/.test(message)) showDuplicate(message); }
   let duplicateTimer = null;
@@ -312,6 +328,7 @@ dialog label:not(.add){font-size:17px}
       $('folders').append(button);
     }
     const favorite = document.createElement('button'); favorite.textContent = '★ 즐겨찾기'; favorite.setAttribute('aria-pressed',String(favoritesOnly)); favorite.onclick=()=>{activeFolder='all';favoritesOnly=true;render();}; $('folders').append(favorite);
+    const trim = document.createElement('button'); trim.textContent='자르기'; trim.className='trim-tab'; trim.disabled=!ready||maintenance||importing||converting||bulkBusy; trim.onclick=openMusicEditPicker; $('folders').append(trim);
     const add = document.createElement('button'); add.textContent = '＋ 폴더'; add.className = 'new'; add.disabled = !ready; add.onclick = createFolder; $('folders').append(add);
     const list = visibleTracks();
     selectedTracks = new Set([...selectedTracks].filter(id=>list.some(t=>t.id===id)));
@@ -343,6 +360,57 @@ dialog label:not(.add){font-size:17px}
     $('repeat').setAttribute('aria-pressed', String(repeatAll));
     updatePlayerUI();
   }
+  function musicEditTracks(){return tracks.filter(t=>!t.recordingDeletedAt&&(!t.isRecording||t.inMusic));}
+  function drawEditWave(){
+    const canvas=$('musicEditWave'),rect=canvas.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(rect.width*ratio));canvas.height=Math.max(1,Math.round(rect.height*ratio));
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);if(!editBuffer)return;const data=editBuffer.getChannelData(0),bars=180,step=Math.max(1,Math.floor(data.length/bars));ctx.fillStyle='#59d48a';
+    for(let i=0;i<bars;i++){let peak=0;for(let j=i*step;j<Math.min((i+1)*step,data.length);j++)peak=Math.max(peak,Math.abs(data[j]));const h=Math.max(2,peak*canvas.height*.88);ctx.fillRect(i*canvas.width/bars,canvas.height/2-h/2,Math.max(2,canvas.width/bars*.52),h);}
+  }
+  function updateEditRange(){
+    const duration=editBuffer?.duration||0,a=duration?editStart/duration*100:0,b=duration?editEnd/duration*100:100;
+    $('musicEditDim').style.background=`linear-gradient(to right,#0009 0%,#0009 ${a}%,transparent ${a}%,transparent ${b}%,#0009 ${b}%,#0009 100%)`;
+    $('musicEditRange').style.left=a+'%';$('musicEditRange').style.width=(b-a)+'%';$('musicEditLeft').style.left=a+'%';$('musicEditRight').style.left=b+'%';
+    $('musicEditStartLabel').textContent=fmt(editStart)+'  —  '+fmt(editEnd);$('musicEditEndLabel').textContent=fmt(duration);
+  }
+  function drawVolume(){
+    const canvas=$('musicVolumeCanvas'),rect=canvas.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(rect.width*ratio));canvas.height=Math.max(1,Math.round(rect.height*ratio));const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h);ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,h*i/4);ctx.lineTo(w,h*i/4);ctx.stroke();}
+    if(!editPoints.length)return;const pts=editPoints.slice().sort((a,b)=>a.x-b.x);ctx.strokeStyle='#ffd84d';ctx.lineWidth=Math.max(3,ratio*3);ctx.beginPath();pts.forEach((p,i)=>{const x=p.x*w,y=(1-p.gain)*(h-18*ratio)+9*ratio;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    for(const p of pts){const x=p.x*w,y=(1-p.gain)*(h-18*ratio)+9*ratio;ctx.beginPath();ctx.fillStyle='#fff';ctx.arc(x,y,Math.max(6,ratio*6),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ff375f';ctx.lineWidth=ratio*2;ctx.stroke();}
+  }
+  function renderEditChoices(){
+    const host=$('musicEditChoices'),query=searchKey($('musicEditSearch').value);host.replaceChildren();const items=musicEditTracks().filter(t=>!query||searchKey(t.name).includes(query)||searchKey(t.filename).includes(query));
+    if(!items.length){const p=document.createElement('p');p.className='edit-state';p.textContent='편집할 음악이 없습니다.';host.append(p);return;}
+    for(const t of items){const b=document.createElement('button');b.className='edit-track';b.innerHTML=icon('music');const label=document.createElement('span');label.textContent=t.name;b.append(label);b.onclick=()=>openMusicEditor(t.id);host.append(b);}
+  }
+  function openMusicEditPicker(){if(!ready||maintenance||importing||converting||bulkBusy)return;$('musicEditSearch').value='';renderEditChoices();$('musicEditPicker').showModal();}
+  async function openMusicEditor(id){
+    const t=track(id);if(!t||editBusy)return;audio.pause();editTrackId=id;$('musicEditPicker').close();$('musicEditor').showModal();$('musicEditTitle').textContent=t.name;$('musicEditState').textContent='음악 파형을 불러오는 중…';$('musicEditSave').disabled=$('musicEditPreview').disabled=true;editPoints=[];editBuffer=null;
+    try{editBlob=await readAudioFile(id);const AC=window.AudioContext||window.webkitAudioContext;await editContext?.close().catch(()=>{});editContext=new AC();editBuffer=await editContext.decodeAudioData(await editBlob.arrayBuffer());editStart=0;editEnd=editBuffer.duration;editPoints=[{x:0,gain:1},{x:1,gain:1}];drawEditWave();updateEditRange();drawVolume();$('musicEditState').textContent='';$('musicEditSave').disabled=$('musicEditPreview').disabled=false;}
+    catch{$('musicEditState').textContent='이 파일의 파형을 열지 못했어요. 다른 음악 파일로 시도해 주세요.';}
+  }
+  $('musicEditPickerClose').onclick=()=>$('musicEditPicker').close();$('musicEditSearch').oninput=renderEditChoices;
+  $('musicEditPickerSearch').onclick=()=>$('musicEditSearch').focus();$('musicEditCancel').onclick=()=>{editCancel?.abort();try{editSource?.stop();}catch{}editSource=null;editContext?.close().catch(()=>{});editContext=null;editBuffer=null;$('musicEditor').close();};
+  $('musicEditor').addEventListener('cancel',e=>{e.preventDefault();$('musicEditCancel').click();});
+  $('musicEditor').addEventListener('close',()=>{if(editBusy)editCancel?.abort();if(!editBusy){editContext?.close().catch(()=>{});editContext=null;editBuffer=null;}});
+  function bindTrimHandle(id,side){let pointer=null;const el=$(id);el.addEventListener('pointerdown',e=>{if(!editBuffer)return;e.preventDefault();pointer=e.pointerId;el.setPointerCapture(pointer);});el.addEventListener('pointermove',e=>{if(pointer!==e.pointerId)return;const r=$('musicEditTimeline').getBoundingClientRect(),v=Math.max(0,Math.min(editBuffer.duration,(e.clientX-r.left)/r.width*editBuffer.duration));if(side==='start')editStart=Math.min(v,editEnd-.1);else editEnd=Math.max(v,editStart+.1);updateEditRange();});el.addEventListener('pointerup',()=>pointer=null);el.addEventListener('pointercancel',()=>pointer=null);}
+  bindTrimHandle('musicEditLeft','start');bindTrimHandle('musicEditRight','end');
+  let volumeGesture=null;
+  $('musicVolume').addEventListener('pointerdown',e=>{if(!editBuffer)return;const r=$('musicVolume').getBoundingClientRect(),x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),gain=Math.max(0,Math.min(1,1-(e.clientY-r.top)/r.height));const pts=editPoints.slice().sort((a,b)=>a.x-b.x);let node=pts.findIndex(p=>Math.abs(p.x-x)<.035);let seg=-1;for(let i=0;i<pts.length-1;i++)if(x>=pts[i].x&&x<=pts[i+1].x){seg=i;break;}
+    if(node>=0)volumeGesture={type:'node',point:pts[node],pointer:e.pointerId,moved:false,startX:e.clientX,startY:e.clientY};else if(seg>=0){const p=pts[seg],q=pts[seg+1],y0=(1-p.gain)*r.height,y1=(1-q.gain)*r.height,y=y0+(y1-y0)*(x-p.x)/Math.max(.0001,q.x-p.x);if(Math.abs(e.clientY-r.top-y)<28)volumeGesture={type:'segment',a:p,b:q,lastY:e.clientY,pointer:e.pointerId,moved:false,x,gain:p.gain+(q.gain-p.gain)*(x-p.x)/Math.max(.0001,q.x-p.x),startX:e.clientX,startY:e.clientY};else{const point={x,gain:1};editPoints.push(point);volumeGesture={type:'node',point,pointer:e.pointerId,moved:false,startX:e.clientX,startY:e.clientY};}}else{const point={x,gain:gain};editPoints.push(point);volumeGesture={type:'node',point,pointer:e.pointerId,moved:false,startX:e.clientX,startY:e.clientY};}
+    $('musicVolume').setPointerCapture(e.pointerId);e.preventDefault();drawVolume();
+  });
+  $('musicVolume').addEventListener('pointermove',e=>{if(!volumeGesture||volumeGesture.pointer!==e.pointerId)return;const r=$('musicVolume').getBoundingClientRect();if(!volumeGesture.moved&&Math.hypot(e.clientX-volumeGesture.startX,e.clientY-volumeGesture.startY)<4)return;volumeGesture.moved=true;if(volumeGesture.type==='node'){volumeGesture.point.x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));volumeGesture.point.gain=Math.max(0,Math.min(1,1-(e.clientY-r.top)/r.height));}else{const delta=(e.clientY-volumeGesture.lastY)/r.height;volumeGesture.a.gain=Math.max(0,Math.min(1,volumeGesture.a.gain-delta));volumeGesture.b.gain=Math.max(0,Math.min(1,volumeGesture.b.gain-delta));volumeGesture.lastY=e.clientY;}editPoints.sort((a,b)=>a.x-b.x);drawVolume();});
+  $('musicVolume').addEventListener('pointerup',e=>{if(!volumeGesture||volumeGesture.pointer!==e.pointerId)return;if(volumeGesture.type==='segment'&&!volumeGesture.moved){editPoints.push({x:volumeGesture.x,gain:volumeGesture.gain});editPoints.sort((a,b)=>a.x-b.x);drawVolume();}volumeGesture=null;});
+  for(const event of ['pointercancel','lostpointercapture'])$('musicVolume').addEventListener(event,()=>{volumeGesture=null;});
+  $('musicEditPreview').onclick=async()=>{if(!editBuffer||editBusy)return;if(editSource){try{editSource.stop();}catch{}editSource=null;$('musicEditPreview').textContent='▶ 미리 듣기';return;}try{await editContext.resume();const source=editContext.createBufferSource(),gain=editContext.createGain(),duration=editEnd-editStart,points=clipEditPoints();source.buffer=editBuffer;source.connect(gain);gain.connect(editContext.destination);const now=editContext.currentTime;gain.gain.setValueAtTime(points[0].gain,now);for(const p of points.slice(1))gain.gain.linearRampToValueAtTime(p.gain,now+p.x*duration);source.start(now,editStart,duration);editSource=source;$('musicEditPreview').textContent='Ⅱ 미리 듣기';source.onended=()=>{$('musicEditPreview').textContent='▶ 미리 듣기';editSource=null;};}catch{$('musicEditState').textContent='미리 듣기를 시작하지 못했어요.';}};
+  function clipEditPoints(){const duration=editEnd-editStart,sorted=editPoints.slice().sort((a,b)=>a.x-b.x),gainAt=x=>{let i=0;while(i<sorted.length-1&&sorted[i+1].x<x)i++;const a=sorted[i],b=sorted[Math.min(i+1,sorted.length-1)];return a===b?a.gain:a.gain+(b.gain-a.gain)*(x-a.x)/Math.max(.000001,b.x-a.x);};const start=editStart/(editBuffer?.duration||1),end=editEnd/(editBuffer?.duration||1),selected=[{x:0,gain:gainAt(start)},...sorted.filter(p=>p.x>start&&p.x<end).map(p=>({x:(p.x-start)/(end-start),gain:p.gain})),{x:1,gain:gainAt(end)}];return selected.map(p=>({x:p.x,gain:p.gain}));}
+  $('musicEditSave').onclick=async()=>{
+    const original=track(editTrackId);if(!original||!editBuffer||editBusy)return;editBusy=true;editCancel=new AbortController();$('musicEditSave').disabled=$('musicEditPreview').disabled=true;$('musicEditProgress').hidden=false;$('musicEditProgress').value=0;$('musicEditState').textContent='편집본 저장 중…';
+    try{const ext=(original.filename.split('.').pop()||'mp3').toLowerCase(),format=({mp3:'mp3',m4a:'m4a',aac:'m4a',wav:'wav',flac:'flac'})[ext]||'mp3',spec=window.JoonAudioTools.formats[format],base=original.name+' (편집본)',filename=base+'.'+spec.ext;const blob=await window.JoonAudioTools.convert(editBlob,{format,bitrate:192,extension:ext,start:editStart,end:editEnd,volumePoints:clipEditPoints(),signal:editCancel.signal,onProgress:p=>$('musicEditProgress').value=Math.min(99,p*100)});if(editCancel.signal.aborted)throw new DOMException('취소됨','AbortError');const id=crypto.randomUUID(),t={...original,id,name:base,filename,size:blob.size,duration:editEnd-editStart,addedAt:Date.now(),fingerprint:'edited:'+crypto.randomUUID(),contentHash:await fileHash(blob),sourceTrackId:original.id,editedAt:Date.now(),pinned:false,favorite:false};if(editCancel.signal.aborted)throw new DOMException('취소됨','AbortError');await write(['tracks','files'],tx=>{tx.objectStore('tracks').put(t);tx.objectStore('files').put(blob,id);});tracks.push(t);render();saveState();$('musicEditState').textContent='✓ 편집본을 원곡 바로 아래에 저장했어요.';$('musicEditProgress').value=100;setTimeout(()=>$('musicEditor').close(),850);if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});}
+    catch(e){if(e.name!=='AbortError')$('musicEditState').textContent='저장하지 못했어요: '+e.message;}
+    finally{editBusy=false;$('musicEditSave').disabled=false;$('musicEditPreview').disabled=false;editCancel=null;}
+  };
   function resetProgress() { $('seek').value = 0; $('elapsed').textContent = '0:00'; $('remaining').textContent = '−0:00'; $('seek').disabled = true; }
   function loadPrepared(id, reason, autoPlay) {
     if (!track(id) || !prepared.has(id)) return false;
@@ -735,7 +803,8 @@ dialog label:not(.add){font-size:17px}
     down:'<path d="m5 8 7 7 7-7"/>',
     export:'<path d="M12 15V3m-4 4 4-4 4 4M5 11v10h14V11"/>',
     trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
-    playing:'<path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 9v6"/>'
+    playing:'<path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 9v6"/>',
+    trim:'<path d="M6 3v12M18 9v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8.2 8.2l7.6 7.6M15.8 8.2 8.2 15.8"/>'
   };
   function icon(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[name] || paths.music) + '</svg>'; }
   function menuAction(id, symbol, label) { $(id).innerHTML = icon(symbol); const text = document.createElement('span'); text.textContent = label; $(id).append(text); }
@@ -1013,7 +1082,7 @@ dialog label:not(.add){font-size:17px}
     sheet.addEventListener('pointercancel', event => finish(event,true));
     sheet.addEventListener('lostpointercapture', event => finish(event,true));
   }
-  for (const id of ['nowPlaying','addMenu','songMenu','playlistPicker','collectionMenu','songPicker','convertMenu','bulkMoveMenu','bulkDeleteMenu']) enableSheetDrag(id);
+  for (const id of ['nowPlaying','addMenu','songMenu','playlistPicker','collectionMenu','songPicker','convertMenu','bulkMoveMenu','bulkDeleteMenu','musicEditPicker','musicEditor']) enableSheetDrag(id);
 
   function demoFile(number) {
     const rate = 22050, seconds = 12, samples = rate * seconds;
