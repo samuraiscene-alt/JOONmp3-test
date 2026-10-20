@@ -299,6 +299,8 @@ dialog label:not(.add){font-size:17px}
   function updateMedia() {
     if (!('mediaSession' in navigator)) return;
     if(recorderUI?.playbackActive()) {recorderUI.updateMedia();return;}
+    // Refresh lock-screen capabilities after iOS creates the active playback session.
+    registerMediaActions();
     try {
       const t = track(currentId);
       navigator.mediaSession.metadata = t ? new MediaMetadata({ title: t.name, artist: 'JOONmp3', album: folderName(t.folderId), artwork: [{ src: new URL('./icons/joonmp3-icon.png', location.href).href, sizes: '512x512', type: 'image/png' }] }) : null;
@@ -600,9 +602,21 @@ dialog label:not(.add){font-size:17px}
     }
   }
   audio.addEventListener('error', () => { if(audio.error)recoverPlayback(); });
-  if ('mediaSession' in navigator) {
-    const handlers = { play:()=>recorderUI?.playbackActive()?recorderUI.play():play(), pause: () => recorderUI?.playbackActive()?recorderUI.pausePlayback():audio.pause(), nexttrack: () => advance('잠금화면 다음 곡'), previoustrack: previous, seekto: data => {if(recorderUI?.playbackActive()){recorderUI.seek(data.seekTime);return;} if (Number.isFinite(data.seekTime) && Number.isFinite(audio.duration)) audio.currentTime = Math.max(0, Math.min(data.seekTime, audio.duration)); }, seekbackward: data => {if(recorderUI?.playbackActive()){recorderUI.skip(-(data.seekOffset||15));return;} audio.currentTime = Math.max(0, audio.currentTime - (data.seekOffset || 10)); }, seekforward: data => {if(recorderUI?.playbackActive()){recorderUI.skip(data.seekOffset||15);return;} if (Number.isFinite(audio.duration)) audio.currentTime = Math.min(audio.duration, audio.currentTime + (data.seekOffset || 10)); } };
-    for (const [name, handler] of Object.entries(handlers)) try { navigator.mediaSession.setActionHandler(name, handler); } catch {}
+  function registerMediaActions() {
+    if (!('mediaSession' in navigator)) return;
+    const handlers = {
+      play:()=>recorderUI?.playbackActive()?recorderUI.play():play(),
+      pause:()=>recorderUI?.playbackActive()?recorderUI.pausePlayback():audio.pause(),
+      nexttrack:()=>advance('잠금화면 다음 곡'),
+      previoustrack:previous,
+      seekto:data=>{if(recorderUI?.playbackActive()){recorderUI.seek(data.seekTime);return;}if(Number.isFinite(data.seekTime)&&Number.isFinite(audio.duration))audio.currentTime=Math.max(0,Math.min(data.seekTime,audio.duration));},
+      seekbackward:data=>{if(recorderUI?.playbackActive()){recorderUI.skip(-(data.seekOffset||15));return;}audio.currentTime=Math.max(0,audio.currentTime-(data.seekOffset||10));},
+      seekforward:data=>{if(recorderUI?.playbackActive()){recorderUI.skip(data.seekOffset||15);return;}if(Number.isFinite(audio.duration))audio.currentTime=Math.min(audio.duration,audio.currentTime+(data.seekOffset||10));}
+    };
+    for (const [name,handler] of Object.entries(handlers)) {
+      try { navigator.mediaSession.setActionHandler(name,handler); }
+      catch (error) { console.warn('JOONmp3 MediaSession action unavailable:',name,error); }
+    }
   }
 
   function setMaintenance(value) {
