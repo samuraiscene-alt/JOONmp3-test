@@ -34,7 +34,7 @@ dialog h3,.player-top,#nowPlaying .art{touch-action:none;user-select:none;-webki
 dialog[data-dragging="true"]{user-select:none;will-change:transform}
 @media(prefers-reduced-motion:reduce){dialog{transition:none!important}}
 .duplicate-toast{position:fixed;z-index:1000;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);width:min(360px,calc(100vw - 40px));padding:18px 20px;border:1px solid #ffffff30;border-radius:18px;background:#303033f5;backdrop-filter:blur(20px);color:#fff;text-align:center;font-size:15px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere;box-shadow:0 12px 40px #0008;pointer-events:none}
-.select-link{color:var(--accent);font-size:15px;padding:0 0 0 10px}.selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:6px 0 12px}.selection-tools button{color:var(--accent);font-size:14px}.selection-tools span{color:var(--muted);font-size:13px}.selection-check{width:28px;height:28px;min-height:28px;border:1.5px solid #717176;border-radius:50%;display:grid;place-items:center;color:white;flex-shrink:0;margin-right:7px;font-size:17px}.selection-check[aria-checked=true]{background:var(--accent);border-color:var(--accent)}.row.selected{background:#ff375f09}.bulk-bar{border-radius:22px;border:1px solid #ffffff24;background:#252527ed;backdrop-filter:blur(24px);padding:12px 15px}.bulk-bar p{text-align:center;font-size:13px;color:var(--muted);margin:0 0 8px}.bulk-actions{display:flex;gap:12px;justify-content:space-between}.bulk-actions button{display:flex;gap:8px;align-items:center;justify-content:center;flex:1;color:var(--accent)}.bulk-actions .danger{color:#ff6574}.confirm-sheet .danger{color:#ff6574}.confirm-sheet p{line-height:1.7;color:var(--muted);font-size:14px}
+.select-link{color:var(--accent);font-size:15px;padding:0 0 0 10px}.selection-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:6px 0 12px}.selection-tools button{color:var(--accent);font-size:14px}.selection-tools span{color:var(--muted);font-size:13px}.selection-check{width:28px;height:28px;min-height:28px;border:1.5px solid #717176;border-radius:50%;display:grid;place-items:center;color:white;flex-shrink:0;margin-right:7px;font-size:17px}.selection-check[aria-checked=true]{background:var(--accent);border-color:var(--accent)}.row.selected{background:#ff375f09}.row.reorderable .song{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.row.reorder-dragging{position:relative;z-index:2;background:#242426;border-radius:14px;box-shadow:0 8px 22px #0008;transform:scale(1.015)}.row.reorder-dragging .song{cursor:grabbing}.bulk-bar{border-radius:22px;border:1px solid #ffffff24;background:#252527ed;backdrop-filter:blur(24px);padding:12px 15px}.bulk-bar p{text-align:center;font-size:13px;color:var(--muted);margin:0 0 8px}.bulk-actions{display:flex;gap:12px;justify-content:space-between}.bulk-actions button{display:flex;gap:8px;align-items:center;justify-content:center;flex:1;color:var(--accent)}.bulk-actions .danger{color:#ff6574}.confirm-sheet .danger{color:#ff6574}.confirm-sheet p{line-height:1.7;color:var(--muted);font-size:14px}
 
 .collection-tile{position:relative;min-width:0}.collection-card{width:100%}.collection-more{position:absolute;right:8px;top:8px;background:#0009;border:1px solid #ffffff20;width:36px;height:36px;min-height:36px}.collection-more svg{width:21px;height:21px}
 .folder-submenu{padding:12px;background:#ffffff08;border-radius:14px;margin-top:8px}.folder-submenu button{display:flex;align-items:center;gap:14px;width:100%;min-height:50px;text-align:left;border-top:1px solid #ffffff16;padding:10px 0;margin-top:10px}#folderActions::after{content:'›';margin-left:auto;font-size:24px;transform:rotate(0);transition:transform .18s}#folderActions[aria-expanded=true]::after{transform:rotate(90deg)}
@@ -152,6 +152,7 @@ dialog label:not(.add){font-size:17px}
   let repeatAll = true, importing = false, selectedId = null, playGeneration = 0, lastSaved = 0;
   let restoreAt = 0, history = [], prepared = new Map(), preparing = new Map();
   let selecting = false, selectedTracks = new Set(), pendingBulkIds = [], pendingPlaylistId = null, bulkBusy = false;
+  let reorderGesture = null, suppressSongClickUntil = 0;
   let collectionMenuId = null, recorderUI = null;
   let resumeBlocked = false, interruptionGeneration = 0;
   let view = 'library', searchText = '', sortBy = 'added', favoritesOnly = false;
@@ -164,6 +165,7 @@ dialog label:not(.add){font-size:17px}
   const physicalFolders = () => folders.filter(f => f.kind !== 'playlist' && f.kind !== 'recording');
   const collection = () => folders.find(f => f.id === activeFolder);
   const searchKey = value => String(value || '').normalize('NFKC').toLocaleLowerCase().replace(/[\s\p{P}\p{Cf}]/gu,'');
+  const canReorderAll = () => view === 'library' && activeFolder === 'all' && !favoritesOnly && sortBy === 'added';
   function searchTitle(node, title) {
     const text=String(title || '').normalize('NFC'); const query=searchKey(searchText);
     if(view!=='search' || !query){node.textContent=text;return;}
@@ -180,7 +182,10 @@ dialog label:not(.add){font-size:17px}
     list = list.filter(t => !t.recordingDeletedAt && (!t.isRecording || t.inMusic));
     if (favoritesOnly && view !== 'search') list = list.filter(t => t.favorite);
     if (view === 'search') list = list.filter(t => searchKey(t.name).includes(searchKey(searchText)) || searchKey(t.filename).includes(searchKey(searchText)));
-    list=list.slice().sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned) || (sortBy === 'title' ? a.name.localeCompare(b.name,'ko') : f?.kind === 'playlist' ? 0 : a.addedAt - b.addedAt));
+    const manualOrderActive = canReorderAll() && list.some(t => Number.isFinite(t.manualOrder));
+    list=list.slice().sort((a,b) => manualOrderActive
+      ? (Number.isFinite(a.manualOrder) ? a.manualOrder : Number.MAX_SAFE_INTEGER) - (Number.isFinite(b.manualOrder) ? b.manualOrder : Number.MAX_SAFE_INTEGER) || a.addedAt - b.addedAt
+      : Number(!!b.pinned) - Number(!!a.pinned) || (sortBy === 'title' ? a.name.localeCompare(b.name,'ko') : f?.kind === 'playlist' ? 0 : a.addedAt - b.addedAt));
     if(f?.kind!=='playlist'&&view!=='search'){
       const visible=new Set(list.map(t=>t.id)),children=new Map();
       for(const t of list)if(t.sourceTrackId&&visible.has(t.sourceTrackId)){const bucket=children.get(t.sourceTrackId)||[];bucket.push(t);children.set(t.sourceTrackId,bucket);}
@@ -342,18 +347,24 @@ dialog label:not(.add){font-size:17px}
     $('trackList').replaceChildren();
     if (!list.length) { const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = ''; $('trackList').append(empty); }
     list.forEach((t, index) => {
-      const row = document.createElement('div'); row.className = 'row' + (t.id === currentId ? ' current' : '');
+      const row = document.createElement('div'); row.className = 'row' + (t.id === currentId ? ' current' : ''); row.dataset.trackId=t.id;
       const button = document.createElement('button'); button.className = 'song'; button.dataset.id = t.id;
       const number = document.createElement('span'); number.className = 'number'; number.innerHTML = icon(t.id === currentId && !audio.paused ? 'playing' : 'music');
       const info = document.createElement('span'); info.className = 'song-info';
       const name = document.createElement('span'); name.className = 'song-name'; searchTitle(name,(t.pinned ? '⌖ ' : '') + t.name + (t.favorite ? ' ★' : ''));
       const detail = document.createElement('span'); detail.className = 'song-detail'; detail.textContent = Number.isFinite(t.duration) ? fmt(t.duration) : ''; detail.hidden = !Number.isFinite(t.duration);
       info.append(name, detail); button.append(number, info);
-      button.onclick = () => selecting ? toggleSelected(t.id) : startCollection(t.id);
+      button.onclick = () => {
+        if (Date.now() < suppressSongClickUntil) return;
+        selecting ? toggleSelected(t.id) : startCollection(t.id);
+      };
       const more = document.createElement('button'); more.className = 'more'; more.innerHTML = icon('more'); more.setAttribute('aria-label', t.name + ' 메뉴'); more.onclick = () => openMenu(t.id);
       if (selecting) {
         const check = document.createElement('button'); check.className='selection-check';check.setAttribute('role','checkbox');check.setAttribute('aria-label',t.name+' 선택');check.setAttribute('aria-checked',String(selectedTracks.has(t.id)));check.textContent=selectedTracks.has(t.id)?'✓':'';check.disabled=bulkBusy;check.onclick=()=>toggleSelected(t.id);row.append(check);
-        row.className += selectedTracks.has(t.id)?' selected':'';more.hidden=true;
+        const isSelected=selectedTracks.has(t.id);
+        row.className += isSelected?' selected':'';
+        if(isSelected&&canReorderAll())row.classList.add('reorderable');
+        more.hidden=true;
       }
       row.append(button, more); $('trackList').append(row);
     });
@@ -684,7 +695,7 @@ dialog label:not(.add){font-size:17px}
       }
       for (const { t, blob } of backup.items) {
         if (t.fingerprint && seen.has(t.fingerprint)) { mappedTracks.set(t.id, seen.get(t.fingerprint)); continue; }
-        const fresh = { isRecording:!!t.isRecording,inMusic:!!t.inMusic,recordingDeletedAt:Number(t.recordingDeletedAt)||0,recordFolderId:mapped.get(t.recordFolderId)||null,recordedAt:Number(t.recordedAt)||0,recordingPlaylists:(t.recordingPlaylists||[]).map(id=>mapped.get(id)).filter(Boolean), id: crypto.randomUUID(), name: t.name, filename: t.filename, size: blob.size, folderId: mapped.get(t.folderId), fingerprint: t.fingerprint || crypto.randomUUID(), addedAt: Number(t.addedAt) || Date.now(), duration: Number.isFinite(t.duration) ? t.duration : null, favorite:!!t.favorite, pinned:!!t.pinned, contentHash:typeof t.contentHash === 'string' && /^[a-f0-9]{64}$/.test(t.contentHash) ? t.contentHash : undefined };
+        const fresh = { isRecording:!!t.isRecording,inMusic:!!t.inMusic,recordingDeletedAt:Number(t.recordingDeletedAt)||0,recordFolderId:mapped.get(t.recordFolderId)||null,recordedAt:Number(t.recordedAt)||0,recordingPlaylists:(t.recordingPlaylists||[]).map(id=>mapped.get(id)).filter(Boolean), id: crypto.randomUUID(), name: t.name, filename: t.filename, size: blob.size, folderId: mapped.get(t.folderId), fingerprint: t.fingerprint || crypto.randomUUID(), addedAt: Number(t.addedAt) || Date.now(), duration: Number.isFinite(t.duration) ? t.duration : null, favorite:!!t.favorite, pinned:!!t.pinned, manualOrder:Number.isFinite(t.manualOrder)?t.manualOrder:undefined, contentHash:typeof t.contentHash === 'string' && /^[a-f0-9]{64}$/.test(t.contentHash) ? t.contentHash : undefined };
         newTracks.push({ t: fresh, blob }); seen.set(fresh.fingerprint,fresh.id); mappedTracks.set(t.id,fresh.id);
       }
       const mergedPlaylists = [];
@@ -987,9 +998,64 @@ dialog label:not(.add){font-size:17px}
     $('bottomTabs').hidden=selecting;
   }
   function toggleSelected(id) {if(bulkBusy||maintenance)return;selectedTracks.has(id)?selectedTracks.delete(id):selectedTracks.add(id);render();}
-  $('selectMode').onclick=()=>{if(maintenance||bulkBusy)return;selecting=!selecting;selectedTracks.clear();render();};
+  $('selectMode').onclick=()=>{
+    if(maintenance||bulkBusy)return;
+    if(!selecting&&view==='library'&&activeFolder==='all'&&sortBy==='title'){sortBy='added';$('sort').value='added';saveState();}
+    selecting=!selecting;selectedTracks.clear();render();
+  };
   $('selectAll').onclick=()=>{if(bulkBusy||maintenance)return;selectedTracks=new Set(visibleTracks().map(t=>t.id));render();};
   $('clearSelected').onclick=()=>{if(bulkBusy||maintenance)return;selectedTracks.clear();render();};
+
+  function listRows(){return Array.from($('trackList').querySelectorAll('.row[data-track-id]'));}
+  function moveSelectedRows(y){
+    const rows=listRows(),moving=rows.filter(row=>selectedTracks.has(row.dataset.trackId));
+    const stationary=rows.filter(row=>!selectedTracks.has(row.dataset.trackId));
+    if(!moving.length||!stationary.length)return;
+    const anchor=stationary.find(row=>y<row.getBoundingClientRect().top+row.getBoundingClientRect().height/2)||null;
+    for(const row of moving)$('trackList').insertBefore(row,anchor);
+  }
+  async function persistSelectedOrder(){
+    const rows=listRows(),ids=rows.map(row=>row.dataset.trackId),changes=ids.map((id,index)=>({...track(id),manualOrder:index})).filter(t=>t.id);
+    if(!changes.length)return;
+    try{
+      await write(['tracks'],tx=>{for(const t of changes)tx.objectStore('tracks').put(t);});
+      for(const t of changes)Object.assign(track(t.id),t);
+      const idSet=new Set(ids);
+      if(currentId&&queue.length===ids.length&&queue.every(id=>idSet.has(id))){
+        const currentIndex=ids.indexOf(currentId);
+        queue=currentIndex<0?ids:ids.slice(currentIndex).concat(ids.slice(0,currentIndex));
+      }
+      render();saveState();updateMedia();say('곡 순서를 저장했어요.');
+    }catch{
+      render();say('순서를 저장하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+  $('trackList').addEventListener('pointerdown',event=>{
+    if(!selecting||!canReorderAll()||bulkBusy||maintenance||event.button!==0)return;
+    const song=event.target.closest('.song'),row=song?.closest('.row[data-track-id]');
+    if(!row||!selectedTracks.has(row.dataset.trackId))return;
+    reorderGesture={pointerId:event.pointerId,startY:event.clientY,active:false};
+  });
+  $('trackList').addEventListener('pointermove',event=>{
+    const gesture=reorderGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;
+    if(!gesture.active&&Math.abs(event.clientY-gesture.startY)<8)return;
+    gesture.active=true;event.preventDefault();
+    for(const row of listRows())row.classList.toggle('reorder-dragging',selectedTracks.has(row.dataset.trackId));
+    moveSelectedRows(event.clientY);
+  });
+  $('trackList').addEventListener('pointerup',event=>{
+    const gesture=reorderGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;
+    reorderGesture=null;
+    for(const row of listRows())row.classList.remove('reorder-dragging');
+    if(!gesture.active)return;
+    suppressSongClickUntil=Date.now()+450;
+    persistSelectedOrder();
+  });
+  $('trackList').addEventListener('pointercancel',event=>{
+    if(!reorderGesture||reorderGesture.pointerId!==event.pointerId)return;
+    const active=reorderGesture.active;reorderGesture=null;
+    if(active)render();
+  });
   $('bulkMove').onclick=()=>{
     if(maintenance||importing||converting||bulkBusy||!selectedTracks.size)return;
     pendingBulkIds=[...selectedTracks];$('bulkMoveTitle').textContent=pendingBulkIds.length+'곡을 폴더로 이동';$('bulkMoveFolder').replaceChildren();
