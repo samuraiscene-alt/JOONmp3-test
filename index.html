@@ -1014,7 +1014,7 @@ dialog label:not(.add){font-size:17px}
     const anchor=stationary.find(row=>y<row.getBoundingClientRect().top+row.getBoundingClientRect().height/2)||null;
     const before=rows.map(row=>row.dataset.trackId).join('|');
     if(anchor===null&&rows.slice(-moving.length).every(row=>selectedTracks.has(row.dataset.trackId)))return;
-    if(anchor&&moving.every(row=>row.nextElementSibling===anchor))return;
+    if(anchor){const anchorIndex=rows.indexOf(anchor),beforeAnchor=rows.slice(anchorIndex-moving.length,anchorIndex);if(beforeAnchor.length===moving.length&&beforeAnchor.every(row=>selectedTracks.has(row.dataset.trackId)))return;}
     const positions=new Map(rows.map(row=>[row,row.getBoundingClientRect()]));
     for(const row of moving)list.insertBefore(row,anchor);
     const after=listRows();
@@ -1050,15 +1050,15 @@ dialog label:not(.add){font-size:17px}
     if(!selecting||!canReorderAll()||bulkBusy||maintenance||event.button!==0)return;
     const song=event.target.closest('.song'),row=song?.closest('.row[data-track-id]');
     if(!row||!selectedTracks.has(row.dataset.trackId))return;
-    $('trackList').setPointerCapture(event.pointerId);
-    reorderGesture={pointerId:event.pointerId,startY:event.clientY,active:false};
+    song.setPointerCapture(event.pointerId);
+    reorderGesture={pointerId:event.pointerId,startY:event.clientY,active:false,trackId:row.dataset.trackId};
   });
   $('trackList').addEventListener('pointermove',event=>{
     const gesture=reorderGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;
     if(!gesture.active&&Math.abs(event.clientY-gesture.startY)<8)return;
     gesture.active=true;event.preventDefault();
     const rows=listRows();
-    const grabbed=event.target.closest('.song')?.closest('.row[data-track-id]');
+    const grabbed=rows.find(row=>row.dataset.trackId===gesture.trackId);
     for(const row of rows)row.classList.toggle('reorder-dragging',row===grabbed);
     moveSelectedRows(event.clientY);
   });
