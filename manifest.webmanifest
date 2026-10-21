@@ -8,6 +8,6 @@
   "theme_color": "#000000",
   "icons": [
     {"src":"/JOONmp3-test/icons/joonmp3-home-v412.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"/JOONmp3-test/apple-touch-icon-v413.png","sizes":"180x180","type":"image/png","purpose":"any"}
+    {"src":"/JOONmp3-test/apple-touch-icon-v413.png?ios-refresh=414","sizes":"180x180","type":"image/png","purpose":"any"}
   ]
 }
