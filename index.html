@@ -966,24 +966,34 @@ dialog label:not(.add){font-size:17px}
   $('collectionBack').onclick=()=>setView('playlists');
   $('tabLibrary').onclick=()=>setView('library');$('tabPlaylists').onclick=()=>setView('playlists');$('tabSearch').onclick=()=>setView('search');$('tabConvert').onclick=()=>$('openConvert').click();
   $('search').oninput=()=>{searchText=$('search').value;render();};$('search').onsearch=$('search').oninput;$('sort').onchange=()=>{sortBy=$('sort').value;render();saveState();};
-  function startCollection(selected = null) {
+  function startCollection(selected = null, shuffle = false) {
     const ids = visibleTracks().map(t => t.id);
     if (!ids.length) { say('이 목록에 음악을 추가해 주세요.'); return; }
+    const previousOrder = queue.join('\u0000');
     if (selected && ids.includes(selected)) {
       const index = ids.indexOf(selected);
-      // Put every song after the selected start, including earlier list entries.
+      // Start with the tapped song, then continue in the visible list order.
       queue = ids.slice(index).concat(ids.slice(0, index));
     } else {
       queue = ids.slice();
-      for (let i = queue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [queue[i], queue[j]] = [queue[j], queue[i]];
+      if (shuffle) {
+        for (let i = queue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [queue[i], queue[j]] = [queue[j], queue[i]];
+        }
+        if (queue.length > 1 && queue[0] === currentId) {
+          const j = 1 + Math.floor(Math.random() * (queue.length - 1));
+          [queue[0], queue[j]] = [queue[j], queue[0]];
+        }
+        if (queue.length > 1 && queue.join('\u0000') === previousOrder) {
+          queue.push(queue.shift());
+        }
       }
     }
-    choose(queue[0], true, selected ? '곡 선택 → 전체 연속 재생' : '무작위 시작 → 전체 연속 재생');
+    choose(queue[0], true, selected ? '곡 선택 → 목록 순서 재생' : shuffle ? '임의 재생 → 무작위 순서' : '재생 → 목록 순서');
   }
-  $('playList').onclick = () => startCollection();
-  $('shuffleList').onclick = () => startCollection();
+  $('playList').onclick = () => startCollection(null, false);
+  $('shuffleList').onclick = () => startCollection(null, true);
   $('miniOpen').onclick=()=>$('nowPlaying').showModal();$('closePlayer').onclick=()=>$('nowPlaying').close();$('miniToggle').onclick=()=>$('toggle').click();$('miniNext').onclick=()=>$('next').click();
   $('nowMore').onclick=()=>{if(currentId){$('nowPlaying').close();openMenu(currentId);}};$('showQueue').onclick=()=>{$('queuePanel').hidden=!$('queuePanel').hidden;renderQueue();};
   for(const [id,symbol] of [['headerAdd','plus'],['headerSettings','more'],['previous','previous'],['next','next'],['miniNext','next'],['closePlayer','down'],['nowMore','more']])$(id).innerHTML=icon(symbol);
